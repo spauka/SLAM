@@ -32,11 +32,28 @@
 \author{Duncan Burke and Sebastian Pauka}
 \maketitle
 
+%Do we need an abstract at this point? It isn't original research, after all.
+
 \section*{Introduction}
 
-%Brief mention of Bayes' theorem. At what level are we meant to pitch this?
+A fundamental requirement for any robotics sytem is the ability to percieve and interact with its physical environment. Any reasonable interaction of a robot with its environment requires an internal model of its surroundings for purposes such as robot localisation, map generation, planning and to enable any other sensor processing to be placed in a spatial context. The data incorporated into such a model from sources such as odometry and sensors is noisy and may suffer from systemeatic error; this is compounded in realistic applications by the need for algorithmic approximations, producing an imperfect abstraction of the robot's environment described by a probability distribution.
 
+%Brief mention of Bayes' theorem. At what level are we meant to pitch this?
 %Structure of the problem - x, u and z. Why this produces a HMM and the markov assumption.
+
+%Maybe find a reference for the markov property and/or conditional independece
+%NEEDS a reference to The Book
+At time t, the robot's state is represented by the variable $x_t$, the odometry data by $u_t$ and sensor data by $z_t$. Na\"{i}vely, $x_t$ may be expressed conditionally as a function of all previous states, sensor and odometry data: $P(x_t | x_{0:t-1}, u_{0:t}, z_{0:t})$. The tractability of this may be improved by ensuring or assuming that $x$ is 'complete', that it satisifes the Markov Condition requiring $x_t$ to be conditionally independent of $u_{0:t-1}$ and $z_{0:t-1}$ given the immediately preceding state $x_{t-1}$. Equivalently, this may be expressed as $x_t$ containing all preceding information contributing to the conditional probabilty of future states.
+
+As a matter of convenience, it is assumed that events occur in the following order:
+\begin{enumerate}
+  \item A movmement $u_t$ is executed 
+  \item An updated prediction $\overline{bel}(x_t)$ of the state $x$ is formed based on the movement instruction
+  \item A measurement $z_t$ is taken
+  \item The measurement information is used to create a posterior belief $bel(x_t)$ from the prediction $\overline{bel}(x_t)$
+\end{enumerate}
+
+
 
 \section*{Bayes' Filter}
 
