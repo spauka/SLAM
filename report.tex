@@ -36,22 +36,21 @@
 
 \section*{Introduction}
 
+
 A fundamental requirement for any robotics sytem is the ability to percieve and interact with its physical environment. Any reasonable interaction of a robot with its environment requires an internal model of its surroundings for purposes such as robot localisation, map generation, planning and to enable any other sensor processing to be placed in a spatial context. The data incorporated into such a model from sources such as odometry and sensors is noisy and may suffer from systemeatic error; this is compounded in realistic applications by the need for algorithmic approximations, producing an imperfect abstraction of the robot's environment described by a probability distribution.
 
-%Brief mention of Bayes' theorem. At what level are we meant to pitch this?
-%Structure of the problem - x, u and z. Why this produces a HMM and the markov assumption.
+% Brief mention of Bayes' theorem. At what level are we meant to pitch this?
+% Structure of the problem - x, u and z. Why this produces a HMM and the markov assumption.
 
-%Maybe find a reference for the markov property and/or conditional independece
-%NEEDS a reference to The Book
-At time t, the robot's state is represented by the variable $x_t$, the control data by $u_t$ and sensor data by $z_t$. Na\"{i}vely, $x_t$ may be expressed conditionally as a function of all previous states, sensor and odometry data: $P(x_t | x_{0:t-1}, u_{0:t}, z_{0:t})$. The tractability of this may be improved by ensuring or assuming that $x$ is 'complete', that it satisifes the Markov Condition requiring $x_t$ to be conditionally independent of $u_{0:t-1}$ and $z_{0:t-1}$ given complete knowledge of the immediately preceding state $x_{t-1}$. Equivalently, this may be expressed as $x_t$ containing all preceding information contributing to the conditional probabilty of future states.
+% Maybe find a reference for the markov property and/or conditional independece
+% NEEDS a reference to The Book
+At time t, the robot's state is represented by the variable $x_t$, commands by $u_t$ and measurements by $z_t$. It is assumed that commands and measurements occur in discrete steps with the measurement $z_t$ taken after the preceding command $u_t$ has been completed. The state $x_t$ is not directly observable, however it is generated stochastically from the previous staes $x_{0:t-1}$ and movement commands $u_{1:t-1}$. If the assumption is made that $x_t$ is conditionally independent of $x_{0:t-2}$ and $u_{1:t-2}$ given $x_{t-1}$, x is said to be complete and satisfies the Markov Condition. Although $x_t$ is hidden, the measurement $z_t$ is generated stochastically from $x_t$ allowing for indirect observation.
 
-As a matter of convenience, it is assumed that events occur in the following order:
-\begin{enumerate}
-  \item A movmement $u_t$ is executed 
-  \item An updated prediction $\overline{bel}(x_t)$ of the state $x$ is formed based on the movement instruction
-  \item A measurement $z_t$ is taken
-  \item The measurement information is used to create a posterior belief $bel(x_t)$ from the prediction $\overline{bel}(x_t)$
-\end{enumerate}
+The belief distrubtion $bel(x_t)$ of the state $x_t$ assigns a probability to every possible state that it is the actual hidden state. The belief is defined conditionally on all past movement commands and sensor measurements (Equation \ref{eq:bel}). It is also convenient to define the belief in $x_t$ prior to incorporating the measurement $z_t$ generated from $x_t$ (Equation \ref{eq:prediction}); this is referred to as the \emph{prediction} and is used to generate $bel(x_t)$ by incorporating $z_t$ in a \emph{measurement update}.
+\begin {align}
+  bel(x_t) & = p(x_t | z_{1:t},u_{1:t}) \label{eq:bel} \\   
+  \overline{bel}(x_t) & = p(x_t | z_{1:t-1}, u_{1:t}) \label{eq:prediction}
+\end {align}
 
 At their core, filters aim to combine observable processes, in our case $u_t$ and $z_t$, into an unobservable signal $x_t$. We can state this mathematically as suggesting that $u_t$ and $z_t$ are observable random variables, and the aim is to synthesise the unobservable random variable $x_t$ via $\left\{u_s,z_s; s \le 1\right\}$. Of course, this process may be computationally very difficult, and the appropriate method to use depends on the nature of the random variables, and the expected nature of the output.
 
@@ -100,13 +99,17 @@ Similarly, for a measurement vector $z_t$ of size $k$, $C_t$ is a matrix of size
 	p(z_t | x_t) = \det(2 \pi Q_t)^{-1/2} \exp\left\{-\frac{1}{2}(z_t - C_t x_t)^T Q_t^{-1}(z_t - C_t x_t)\right\}
 \end{equation}
 
-%You wanted to do this, so I'll leave it to you. Remember, put anything about the Bayes' filter in general in the Bayes' filter section and leave a comparison of techniques to Discussion.
-%Though I think it is still a good idea to go over the advantages and disadvantages in this section.
-
 \section*{Particle Filter}
 
 %Overview of a particle filter - state represented as a sampling of possible states
-A particle filter represents the state $x_t$ not as a paramaterised probability distribution, but as a finite number of representative states
+Whereas the Kalman Filter represents the belief as a paramaterised gaussian distribution, the Particle Filter is non-parameterised, representing the belief as a finite set $\chi$ of $M$ states drawn from the state space according to the distribution of the posterior. By increasing the size of the particle filter, this can be made to approximate any distribution without any regards to constraints such as unimodality.
+
+At the start of the algorithm, the set of particles $\chi_0$ are drawn according to the distribution of the start state $p(x_0)$. 
+
+At time $t$, for each $i \in [1,M]$ a particle $\bar{x}^{[i]}_t$ is drawn from the distribution of the state transition probability $p(x_t | u_t,x^{[i]}_{t-1})$ into the set $\bar{\chi}_t$. Next, draw $M$ particles from $\bar{\chi}_t$ into $\chi_t$ with probability $\eta p(z_t | x^{[i]}_t)$.
+
+
+
 %Algorithm
 
 %Weighting
