@@ -10,7 +10,7 @@
 %\geometry{verbose,tmargin=1.5cm,lmargin=2.5cm,rmargin=2.5cm}
 \usepackage{fullpage}
 \usepackage{verbatim}
-
+\usepackage{algorithm,algorithmic}
 \usepackage{amsthm}
 \usepackage{amsmath}
 \usepackage{amsfonts}
@@ -100,6 +100,22 @@ Similarly, for a measurement vector $z_t$ of size $k$, $C_t$ is a matrix of size
 	p(z_t | x_t) = \det(2 \pi Q_t)^{-1/2} \exp\left\{-\frac{1}{2}(z_t - C_t x_t)^T Q_t^{-1}(z_t - C_t x_t)\right\}
 \end{equation}
 
+The algorithm for the Kalman filter is thus:
+
+\begin{algorithm}
+\caption{Kahlman Filter Algorithm}
+\label{alg:kalman}
+\begin{algorithmic}
+	\REQUIRE $\mu_{t-1}, \Sigma_{t-1}, u_t, z_t$
+	\STATE $\overline{\mu}_t \leftarrow A_t\mu_{t-1} + B_t \mu_t$
+	\STATE $\overline{\Sigma}_t \leftarrow A_t \Sigma_{t-1}A_t^T + R_t$
+	\STATE
+	\STATE $K_t \leftarrow \overline{\Sigma}_t C_t^T\left(C_t \overline{\Sigma}_t C_t^T + Q_t\right)^{-1}$
+	\STATE $\mu_t \leftarrow \overline{\mu}_t + K_t\left(z_t - C_t \overline{\mu}_t\right)$
+	\STATE $\Sigma_t \leftarrow (I-K_t C_t)\overline{\Sigma}_t$
+	\RETURN $\mu_t, \Sigma_t$
+\end{algorithmic}
+\end{algorithm}
 %You wanted to do this, so I'll leave it to you. Remember, put anything about the Bayes' filter in general in the Bayes' filter section and leave a comparison of techniques to Discussion.
 %Though I think it is still a good idea to go over the advantages and disadvantages in this section.
 
@@ -115,5 +131,7 @@ A particle filter represents the state $x_t$ not as a paramaterised probability 
 
 \section*{Discussion}
 
+\bibliographystyle{plain}
+\bibliography{references}
 
 \end{document}
