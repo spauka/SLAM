@@ -61,6 +61,16 @@ As a matter of convenience, it is assumed that events occur in the following ord
 
 \section*{Kalman Filter}
 
+One of the most common implementations of the Bayes filter is the Kalman Filter. The Kalman filter is a technique for filtering and prediction in linear Gaussian systems. Dispite this limitation, the Kalman filter is one of the best studied techniques for implementing the Bayes filters.
+
+The filter relies on a number of assumptions about the inputs to the:
+\begin{enumerate}
+	\item The state transition probability $p(x_t | u_t,x_{t-1})$ is a linear function with added Gaussian noise, expressed as:
+		\begin{equation}
+			x_t = A_t x_{t-1} + B_t u_t + \epsilon _t
+		\end{equation}
+\end{enumerate}
+
 %You wanted to do this, so I'll leave it to you. Remember, put anything about the Bayes' filter in general in the Bayes' filter section and leave a comparison of techniques to Discussion.
 %Though I think it is still a good idea to go over the advantages and disadvantages in this section.
 
