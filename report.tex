@@ -43,7 +43,7 @@ A fundamental requirement for any robotics sytem is the ability to percieve and 
 
 %Maybe find a reference for the markov property and/or conditional independece
 %NEEDS a reference to The Book
-At time t, the robot's state is represented by the variable $x_t$, the odometry data by $u_t$ and sensor data by $z_t$. Na\"{i}vely, $x_t$ may be expressed conditionally as a function of all previous states, sensor and odometry data: $P(x_t | x_{0:t-1}, u_{0:t}, z_{0:t})$. The tractability of this may be improved by ensuring or assuming that $x$ is 'complete', that it satisifes the Markov Condition requiring $x_t$ to be conditionally independent of $u_{0:t-1}$ and $z_{0:t-1}$ given the immediately preceding state $x_{t-1}$. Equivalently, this may be expressed as $x_t$ containing all preceding information contributing to the conditional probabilty of future states.
+At time t, the robot's state is represented by the variable $x_t$, the control data by $u_t$ and sensor data by $z_t$. Na\"{i}vely, $x_t$ may be expressed conditionally as a function of all previous states, sensor and odometry data: $P(x_t | x_{0:t-1}, u_{0:t}, z_{0:t})$. The tractability of this may be improved by ensuring or assuming that $x$ is 'complete', that it satisifes the Markov Condition requiring $x_t$ to be conditionally independent of $u_{0:t-1}$ and $z_{0:t-1}$ given complete knowledge of the immediately preceding state $x_{t-1}$. Equivalently, this may be expressed as $x_t$ containing all preceding information contributing to the conditional probabilty of future states.
 
 As a matter of convenience, it is assumed that events occur in the following order:
 \begin{enumerate}
@@ -53,23 +53,52 @@ As a matter of convenience, it is assumed that events occur in the following ord
   \item The measurement information is used to create a posterior belief $bel(x_t)$ from the prediction $\overline{bel}(x_t)$
 \end{enumerate}
 
-
+At their core, filters aim to combine observable processes, in our case $u_t$ and $z_t$, into an unobservable signal $x_t$. We can state this mathematically as suggesting that $u_t$ and $z_t$ are observable random variables, and the aim is to synthesise the unobservable random variable $x_t$ via $\left\{u_s,z_s; s \le 1\right\}$. Of course, this process may be computationally very difficult, and the appropriate method to use depends on the nature of the random variables, and the expected nature of the output.
 
 \section*{Bayes' Filter}
 
 %We need to cover this is some detail, I think. Fabio seems to be heavily interested in the theoretical side of robotics so we should at the very least justify and explain the algorithm and why it is impractical in its given form.
+\begin{equation}
+\label{eq:mvarnormal}
+p(x) = \det(2 \pi \Sigma)^{-1/2} \exp\left\{-\frac{1}{2}(x-\mu)^T \Sigma^{-1}(x-\mu)\right\}
+\end{equation}
 
 \section*{Kalman Filter}
 
 One of the most common implementations of the Bayes filter is the Kalman Filter. The Kalman filter is a technique for filtering and prediction in linear Gaussian systems. Dispite this limitation, the Kalman filter is one of the best studied techniques for implementing the Bayes filters.
 
-The filter relies on a number of assumptions about the inputs to the:
+The filter relies on a number of assumptions about the inputs, above those made by the Bayes' Filter, namely:
 \begin{enumerate}
-	\item The state transition probability $p(x_t | u_t,x_{t-1})$ is a linear function with added Gaussian noise, expressed as:
+	\item The state transition probability $p(x_t | u_t,x_{t-1})$ is a linear function with added Gaussian noise. A linear Gaussian is expressed as:
 		\begin{equation}
 			x_t = A_t x_{t-1} + B_t u_t + \epsilon _t
 		\end{equation}
+		Since $A_t$ and $B_t$ are constant, the state transition function is linear in its arguments.
+	\item The measurement propability must also be linear in its arguments, again with added Gaussian nose. It is expressed as:
+		\begin{equation}
+			z_t = C_t x_t + \delta _t
+		\end{equation}
+	\item The initial belief $bel(x_0)$ must be normally distributed. This is denoted:
+		\begin{equation}
+			bel(x_0) = p(x_0) = \det(2 \pi \Sigma_0)^{-1/2} \exp\left\{-\frac{1}{2}(x_0-\mu_0)^T \Sigma_0^{-1}(x_0-\mu_0)\right\}
+		\end{equation}
+		such that the mean of the belief is $\mu_0$ and the covariance $\Sigma_0$.
 \end{enumerate}
+Under these assumptions, we can show that for any $t$, the posterior $bel(x_t)$ is always Gaussian.
+
+The constant terms of the state transition probability, $A_t$ and $B_t$ are matrices which represent some physical relationship between the terms of the state vector ($x_t$) and the control vector $(u_t)$. As such, if the dimension of the state vector is $n$ and the dimension of the conrol vector is $m$ then the matrix $A_t$ is a $n \times n$ matrix, and the matrix $B_t$ is a $n \times m$ matrix, such that the posterior state vector is also a vector of dimension $n$. 
+
+The random variable $\epsilon _t$ is a Gaussian random vector of dimension $n$ that represents the uncertainty introduced by the state transition. It has a mean of zero, and covariance $R_t$.
+
+Therefore, the distribution of $p(x_t | u_t, x_{t-1})$ has a mean of $A_t x_{t-1} + B_T u_t$ and covariance $R_t$, and therefore by substitution into the definition of the multivariate normal distribution (eq ~\ref{eq:mvarnormal}):
+\begin{equation}
+	p(x_t | u_t, x_{t-1}) = \det(2 \pi R_t)^{-1/2} \exp\left\{-\frac{1}{2}(x_t - A_t x_t-1 - B_t u_t)^T R_t^{-1}(x_t - A_t x_{t-1} - B_t u_t)\right\}
+\end{equation}
+
+Similarly, for a measurement vector $z_t$ of size $k$, $C_t$ is a matrix of size $k \times n$, and $\delta_t$ describes mesaurement noise. The measurement noise is a multivariate Gaussian with zero mean and covariance $Q_t$, such that, again my substitution into the multivariate normal distribution is:
+\begin{equation}
+	p(z_t | x_t) = \det(2 \pi Q_t)^{-1/2} \exp\left\{-\frac{1}{2}(z_t - C_t x_t)^T Q_t^{-1}(z_t - C_t x_t)\right\}
+\end{equation}
 
 %You wanted to do this, so I'll leave it to you. Remember, put anything about the Bayes' filter in general in the Bayes' filter section and leave a comparison of techniques to Discussion.
 %Though I think it is still a good idea to go over the advantages and disadvantages in this section.
