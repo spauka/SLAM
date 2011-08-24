@@ -119,13 +119,13 @@ The algorithm for the Kalman filter is thus:
 \section*{Particle Filter}
 
 %Overview of a particle filter - state represented as a sampling of possible states
-Whereas the Kalman Filter represents the belief as a paramaterised gaussian distribution, the Particle Filter is non-parameterised, representing the belief at time $t$ as a finite set $\chi_t$ of $M$ states $\{x^{[1]}_t, x^{[2]}_t, \ctdots , x^{[M]}_t\}$ drawn from the state space according to the distribution of the posterior. By increasing the size of the particle filter, this can be made to approximate any distribution without any regards to constraints such as unimodality.
+Whereas the Kalman Filter represents the belief as a paramaterised gaussian distribution, the Particle Filter is non-parameterised, representing the belief at time $t$ as a finite set $\chi_t$ of $M$ states $\{x^{[1]}_t, x^{[2]}_t, \cdot , x^{[M]}_t\}$ drawn from the state space according to the distribution of the posterior. By increasing the size of the particle filter, this can be made to approximate any distribution without any regards to constraints such as unimodality.
 
 At the start of the algorithm, the set of particles $\chi_0$ are drawn according to the distribution of the start state $p(x_0)$ (Equation \ref{eq:particle_initial}. At time $t$, a new hypothetical state $x^{[m]}_t$ is generated from each particle $x^{[m]}_{[t-1]}$ for each $m \in [1,M]$ by sampling a state from the distribution of the state transition probability (Equation \ref{eq:particle_prediction}). These new states belong to $\bar{\chi}_t$. Next, a resampling step randomly selects with replacement $M$ particles from $\bar{\chi}_t$ into $\chi_t$ with weights $w^{[m]}_t$ given by the measurement model (Equation \ref{eq:particle_weight}).
 
 \begin {align}
   x^{[m]}_0 \sim  p(x_0) \label{eq:particle_initial}\\
-  \x^{[m]}_t \sim p(x_t \mid u_t,x^{[m]}_{t-1}) \label{eq:particle_prediction} \\
+  x^{[m]}_t \sim p(x_t \mid u_t,x^{[m]}_{t-1}) \label{eq:particle_prediction} \\
   w^{[m]}_t = \eta p(z_t \mid \bar{x}^{[m]}_t) \label{eq:particle_weight}
 \end {align}
 
