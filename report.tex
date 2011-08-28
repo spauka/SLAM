@@ -132,14 +132,14 @@ At the start of the algorithm, the set of particles $\chi_0$ are drawn according
 Hence, the complete algorithm is:
 \begin{algorithm}
 \caption{Particle Filter Algorithm}
-\label{alg:particla}
+\label{alg:particle}
 \begin{algorithmic}
 	\REQUIRE $\chi_{t-1}, u_t, z_t$
-        \STATE $\bar{\chi}_t = \chi_t = \emptyset$
-        \FOR {$m = 1 to M$}
-        \STATE $sample \bar{x}^{[m]}_t \sim p(x_t \mid u_t,x^{[m]}_{t-1})$
-        \STATE $w^{[m]}_t = p(z_t | x^{[m]}_t)$
-        \STATE Add $\bar{x}^{[m]}_t$ and $w^{[m]}_t$ to $\bar{\chi}_t$
+        \STATE $\overline{\chi}_t = \chi_t = \emptyset$
+        \FOR {$m = 1$ to $M$}
+        \STATE sample $x^{[m]}_t \sim p(x_t \mid u_t,x^{[m]}_{t-1})$
+        \STATE $w^{[m]}_t = p(z_t \mid x^{[m]}_t)$
+        \STATE Add $x^{[m]}_t$ and $w^{[m]}_t$ to $\bar{\chi}_t$
         \ENDFOR
 
         \FOR {$m = 1 to M$}
@@ -150,7 +150,10 @@ Hence, the complete algorithm is:
 \end{algorithmic}
 \end{algorithm}
 
-
+It can be shown through induction on Bayes' Rule that $bel(x_{0:t})$ can be given by Equation \ref{eq:particle_equation}.
+\begin{align}
+  bel(x_{0:t}) & = \eta w^{[m]}_tp(x_t \mid x_{t-1}, u_t)p(x_{0:t-1}
+\end{align}
 Following this algorithm, asymptotically $\lim_{M \to \infty} x^{[i]}_t \ sim p(x_t \mid z_{1:t}, u_{1:t})$.
 
 %Weighting
