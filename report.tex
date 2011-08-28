@@ -104,7 +104,7 @@ The algorithm for the Kalman filter is thus:
 \begin{algorithm}
 \caption{Kahlman Filter Algorithm}
 \label{alg:kalman}
-\begin{algorithmic}
+\begin{algorithmic}[1]
 	\REQUIRE $\mu_{t-1}, \Sigma_{t-1}, u_t, z_t$
 	\STATE $\overline{\mu}_t \leftarrow A_t\mu_{t-1} + B_t \mu_t$
 	\STATE $\overline{\Sigma}_t \leftarrow A_t \Sigma_{t-1}A_t^T + R_t$
@@ -115,6 +115,10 @@ The algorithm for the Kalman filter is thus:
 	\RETURN $\mu_t, \Sigma_t$
 \end{algorithmic}
 \end{algorithm}
+
+The derivation of the Kalman filter is given in the text ~\cite{probrob}, and will not be reproduced here for brevity.
+
+We notice that the posterior is calculated in two steps. Initially, the state is updated using the previous state $\mu_t$ and the control action $u_t$. We notice that the initial update on lines 2 and 3 does not yet incorporate the sensor data $z_t$. We use the mean $u_{t-1}$ to represent the previous state $x_{t-1}$, and find our new state, being the new mean $\overline{\mu}_t$, and new covariance $\overline{\Sigma}_t$. The value $\overline{\mu}_t$ represents the belief of the state at time $t$.
 
 \section*{Particle Filter}
 
