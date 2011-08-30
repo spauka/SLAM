@@ -1,15 +1,12 @@
 import random
-
+import math
 # First we define constants
 X_SIZE = 20.0 # Room size
 Y_SIZE = 20.0
-DELTA_T = 0.5 # Time per period
+DELTA_T = 0.01 # Time per period
 D_DEV = 0.1 # Position change Deviation
 A_DEV = 0.5 # Accelleration Deviation
-L_DEV = 0.5 # Laser Deviation
-
-# Globals
-time = 0.0 # Start at time 0
+L_DEV = 0.01 # Laser Deviation
 
 # Define a robot class
 class Robot:
@@ -19,6 +16,7 @@ class Robot:
 	__vy = 0
 	__ax = 0
 	__ay = 0
+	time = 0
 
 	__moveDone = lambda: 0 # Callback once time has ticked
 
@@ -47,13 +45,13 @@ class Robot:
 		self.__x += self.__vx*DELTA_T
 		self.__y += self.__vy*DELTA_T
 		
-		output.append(self.__x + random.gauss(0, D_DEV))
-		output.append(self.__y + random.gauss(0, D_DEV))
+		output.append(p_x - self.__x + random.gauss(0, D_DEV))
+		output.append(p_y - self.__y + random.gauss(0, D_DEV))
 		output.append(self.__ax + random.gauss(0, A_DEV))
 		output.append(self.__ay + random.gauss(0, A_DEV))
 		output.append(Y_SIZE - self.__y + random.gauss(0, L_DEV))
 		output.append(X_SIZE - self.__x + random.gauss(0, L_DEV))
-		output.append(self.__y + random.gauss(0, L_DEV))
+		output.append(self.__x + random.gauss(0, L_DEV))
 		output.append(self.__y + random.gauss(0, L_DEV))
 		output.append(self.__x)
 		output.append(self.__y)
@@ -68,6 +66,8 @@ class Robot:
 
 		self.__moveDone()
 
+		self.time += DELTA_T
+
 def pnt(r, x, y):
 	r.push(x, y)
 	r.tick()
@@ -75,12 +75,7 @@ def pnt(r, x, y):
 if __name__ == "__main__":
 	# Make the robot move in a circle
 	r = Robot()
-	pnt(r, 0, 1)
-	pnt(r, 1, 1)
-	pnt(r, 1, 0)
-	pnt(r, 1, -1)
-	pnt(r, 0, -1)
-	pnt(r, -1, -1)
-	pnt(r, -1, 0)
-	pnt(r, -1, 1)
-	
+	while r.time <= 2:
+		pnt(r, 10*math.sin(r.time*math.pi), 10*math.cos(r.time*math.pi))
+	while r.time <= 4:
+		pnt(r, -10*math.sin(r.time*math.pi), -10*math.cos(r.time*math.pi))
