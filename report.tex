@@ -222,7 +222,7 @@ Overall, the Kalman Filter can be extremely simple and fast in implementation, h
 
 While the particle filter is more general and can be applied in a larger number of situations, its accuracy is highly dependant on the number of particles used and complexity linear in number of particles.
 
-In high-dimensional problems (i.e a large number of features in the state vector), Kalman filters scale $O(n^2)$ while Particle Filters scale $O(log n)$. Hence, Kalman filters perform very poorly in such cases.
+In high-dimensional problems (i.e a large number of features in the state vector), Kalman filters scale $O(n^2)$ while Particle Filters scale $O(\log n)$. Hence, Kalman filters perform very poorly in such cases.
 
 Ultimately, the decision about what type of filter is more appropriate requires extensive knowledge of the situation and the problem to which the filter is being applied. In applications where the dimension of the state is small and can be reasonably represented by a gaussian, and state transitions are not overley nonlinear, the Kalman filter may perform well. In more general problems, the Particle Filter is likely to be better applicable. Overall, the problem of automatically selecting a filtering method and parameters for the filters remains an open problem in the field of robotics which certainly warrants further study.
 
