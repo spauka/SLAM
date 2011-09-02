@@ -156,14 +156,16 @@ It is interesting to note that the Kalman filter can be interpreted as a LMS err
 \section*{Particle Filter}
 
 %Overview of a particle filter - state represented as a sampling of possible states
-Whereas the Kalman Filter represents the belief as a parameterised Gaussian distribution, the Particle Filter is non-parameterised, representing the belief at time $t$ as a finite set $\chi_t$ of $M$ states $\{x^{[1]}_t, x^{[2]}_t, \cdots , x^{[M]}_t\}$ drawn from the state space according to the distribution of the posterior. By increasing the size of the particle filter, $\chi$ can be made to approximate any distribution without any regards to constraints such as uni-modality\cite{Thrun02d}.
+Whereas the Kalman Filter represents the belief as a parameterised Gaussian distribution, the Particle Filter is non-parameterised, representing the belief at time $t$ as a finite set $\chi_t$ of $M$ states $\{x^{[1]}_t, x^{[2]}_t, \cdots , x^{[M]}_t\}$ drawn from the state space according to the distribution of the posterior. By increasing the number of particles, $\chi$ can be made to asymptotically approximate any distribution without any regards to constraints such as uni-modality\cite{Thrun02d}.
 
-At the start of the algorithm, the set of particles $\chi_0$ are drawn according to the distribution of the start state $p(x_0)$ (Equation \ref{eq:particle_initial}). At time $t$, a new hypothetical state $x^{[m]}_t$ is generated from each particle $x^{[m]}_{[t-1]}$ for each $m \in [1,M]$ by sampling a state from the distribution of the state transition probability (Equation \ref{eq:particle_prediction}). These new states belong to $\bar{\chi}_t$. Next, a re-sampling step randomly selects with replacement $M$ particles from $\bar{\chi}_t$ into $\chi_t$ with weights $w^{[m]}_t$ given by the measurement model (Equation \ref{eq:particle_weight}).
+At the start of the algorithm, the set of particles $\chi_0$ are drawn according to the distribution of the start state $p(x_0)$ (Equation \ref{eq:particle_initial}). At time $t$, a single new hypothetical state $x^{[m]}_t$ is generated from each particle $x^{[m]}_{t-}$ for $m \in [1,M]$ by sampling a state from the distribution of the state transition probability (Equation \ref{eq:particle_prediction}). These new states belong to $\bar{\chi}_t$ which is distributed according to the predicted belief $p(x_t \mid u_t,x^{[m]}_{t-1})$.
+
+From the Bayes Filter (Algorithm \ref{alg:bayes}), $bel(x_t) = \eta p(z_t \mid x_t) \overline{bel}(x_t)$. To produce the desired target distribution from $\bar{\chi}_t$ according to this relationship, $\bar{\chi}_t$ must be resampled with each particle weighted by the measurement model $p(z_t \mid x_t)$. For each $x^{[m]}_{t}$, a weight $w^{[m]}_t$ is calculated (Equation \ref{eq:particle_weight}). Next, a re-sampling step randomly selects with replacement $M$ particles from $\bar{\chi}_t$ into $\chi_t$ with each particle $x^{[m]}_{t}$ weighted by $w^{[m]}_t$ given by the measurement model\cite{probrob}.
 
 \begin {align}
   x^{[m]}_0 \sim  p(x_0) \label{eq:particle_initial}\\
   x^{[m]}_t \sim p(x_t \mid u_t,x^{[m]}_{t-1}) \label{eq:particle_prediction} \\
-  w^{[m]}_t = \eta p(z_t \mid \bar{x}^{[m]}_t) \label{eq:particle_weight}
+  w^{[m]}_t = \eta p(z_t \mid x^{[m]}_t) \label{eq:particle_weight}
 \end {align}
 
 Hence, the complete algorithm is:
@@ -189,9 +191,9 @@ Hence, the complete algorithm is:
 
 It can be shown through induction on Bayes' Rule that $bel(x_{0:t})$ can be given by Equation \ref{eq:particle_equation}.
 \begin{align}
-  bel(x_{0:t}) & = \eta w^{[m]}_tp(x_t \mid x_{t-1}, u_t)p(x_{0:t-1} \label{eq:particle_equation}
+  bel(x_{0:t}) & = \eta w^{[m]}_tp(x_t \mid x_{t-1}, u_t)p(x_{0:t-1} \mid z_{0:t-1},u_{0:t-1}) \label{eq:particle_equation}
 \end{align}
-Following this algorithm, asymptotically $\lim_{M \to \infty} x^{[i]}_t \ sim p(x_t \mid z_{1:t}, u_{1:t})$.
+Following this algorithm, asymptotically $\underset{M \to \infty}{\lim} x^{[i]}_t \sim p(x_t \mid z_{1:t}, u_{1:t})$.
 
 %Weighting
 
