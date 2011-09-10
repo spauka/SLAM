@@ -37,13 +37,13 @@
 \section*{Introduction}
 
 
-A fundamental requirement for any robotics sytem is the ability to percieve and interact with its physical environment. Any reasonable interaction of a robot with its environment requires an internal model of its surroundings for purposes such as robot localisation, map generation, planning and to enable any other sensor processing to be placed in its spatial context. The creation of this model requires \emph{data fusion} - some algorithm  enabling a multitude of data sources and measurements to produce a single estimate. It must also be considered that the data incorporated into such a model is inherently noisy and may further suffer from systematic error, and that in realistic applications algorithimic approximations are commonly necessary for computational tractability \cite{probrob}.
+A fundamental requirement for any robotics system is the ability to perceive and interact with its physical environment. Any reasonable interaction of a robot with its environment requires an internal model of its surroundings for purposes such as robot localisation, map generation, planning and to enable any other sensor processing to be placed in its spatial context. The creation of this model requires \emph{data fusion} - some algorithm  enabling a multitude of data sources and measurements to produce a unified estimate. It must also be considered that the data incorporated into such a model is inherently noisy and may further suffer from systematic error, and that in realistic applications algorithmic approximations are commonly necessary for computational tractability \cite{probrob}.
 
-The method by which we do this is by using filters. At their core, filters aim to combine observable processes, such as sensor data, and knowledge about what the robot is doing, into an unobservable model of its surroundings, which represents the \emph{state} of the robot. In this paper we aim to examine two of the most common algorithms used to  probabilistically synthesize the unobservable random variable from a number of uncertain and noisy inputs. These methods are called the Kalman Filter and the Particle filter respectively.
+This data fusion is accomplished through the use of filters. At their core, filters combine observable processes such as sensor data and knowledge about what the robot is doing into a model of its surroundings, representing the \emph{state} of the robot. Two common filters are addressed in this report: the Kalman Filter and the Particle filter.
 
-This internal state is given in discrete steps by the variable $x_t$, indexed by time $t$. In addition, at time $t$, control data $u_t$ and measurements $z_t$ are recieved. It is assumed that commands and measurements occur in discrete steps with the measurement $z_t$ taken after the preceding control command given by $u_t$ has been completed. The state $x_t$ is not directly observable and must be generated stochastically from the previous states $x_{0:t-1}$, movement commands $u_{1:t-1}$ and sensor inputs $z_{0:t}$ \cite{Thrun02d}. If $x_t$ is conditionally independent of $x_{0:t-2}$ and $u_{1:t-2}$ given $x_{t-1}$, x is said to be \emph{complete} and satisfies the \emph{Markov Condition}\cite{probrob}. Although $x_t$ is hidden, the measurement $z_t$ is generated stochastically from $x_t$ allowing for indirect observation\cite{Thrun02d}.
+This internal state is given in discrete steps by the variable $x_t$, indexed by time $t$. In addition, at time $t$, control data $u_t$ and measurements $z_t$ are received. It is assumed that commands and measurements occur in discrete steps with the measurement $z_t$ taken after the preceding control command given by $u_t$ has been completed. The state $x_t$ is not directly observable and must be generated stochastically from the previous states $x_{0:t-1}$, movement commands $u_{1:t-1}$ and sensor inputs $z_{0:t}$ \cite{Thrun02d}. If $x_t$ is conditionally independent of $x_{0:t-2}$ and $u_{1:t-2}$ given $x_{t-1}$, x is said to be \emph{complete} and satisfies the \emph{Markov Condition}\cite{probrob}. Although $x_t$ is hidden, the measurement $z_t$ is generated stochastically from $x_t$ allowing for indirect observation\cite{Thrun02d}.
 
-The belief distrubtion $bel(x_t)$ of the state $x_t$ assigns a probability to every possible state that it is the actual hidden state. The belief is defined conditionally on all past movement commands and sensor measurements (Equation \ref{eq:bel}) \cite{probrob}. It is also convenient to define the belief in $x_t$ prior to incorporating the measurement $z_t$ generated from $x_t$ (Equation \ref{eq:prediction}); this is referred to as the \emph{prediction} and is used to generate $bel(x_t)$ by incorporating $z_t$ in a \emph{measurement update}.
+The belief distribution $bel(x_t)$ of the state $x_t$ assigns a probability to every possible state that it is the actual hidden state. The belief is defined conditionally on all past movement commands and sensor measurements (Equation \ref{eq:bel}) \cite{probrob}. It is also convenient to define the belief in $x_t$ prior to incorporating the measurement $z_t$ generated from $x_t$ (Equation \ref{eq:prediction}); this is referred to as the \emph{prediction} and is used to generate $bel(x_t)$ by incorporating $z_t$ in a \emph{measurement update}.
 \begin {align}
   bel(x_t) & = p(x_t \mid z_{1:t},u_{1:t}) \label{eq:bel} \\   
   \overline{bel}(x_t) & = p(x_t \mid z_{1:t-1}, u_{1:t}) \label{eq:prediction}
@@ -53,7 +53,7 @@ The belief distrubtion $bel(x_t)$ of the state $x_t$ assigns a probability to ev
 
 % Define complete here...
 
-The Bayes Filter is an algorithm used to calculate the belief $bel(x_t)$. It is assumed that the state is complete. Therefore, the algorithm can be framed recursively as an \emph{update rule} calculating the new belief $bel({x_t})$ given the previous belief $bel(x_{t-1})$ and new inputs $u_t$ and $z_t$. The algorithm consists of two core steps: the \emph{control update} and the \emph{measurement update}. Firstly, for every state $x_t$ in the state space, an updated prediction $\overline{bel}(x_t)$ is given by the integral of the conditional probability of $x_t$ given $bel(x_{t-1})$ and $u_t$\cite{probrob}. This requires the \emph{movement model} $p(x_t \mid u_t,x_{t-1})$ and may be given by a summation in the case of a discrete state space. $bel(x_t)$ can now be calculated from the \emph{measurement model} $p(z_t \mid x_t)$ and $\overline{bel}(x_t)$.
+The Bayes Filter is an algorithm used to calculate the belief $bel(x_t)$. It is assumed that the state is complete, and therefore satisfies the Markov condition. Therefore, the algorithm can be framed recursively as an \emph{update rule} calculating the new belief $bel({x_t})$ given the previous belief $bel(x_{t-1})$ and new inputs $u_t$ and $z_t$. The algorithm consists of two core steps: the \emph{control update} and the \emph{measurement update}. Firstly, for every state $x_t$ in the state space, an updated prediction $\overline{bel}(x_t)$ is given by the integral of the conditional probability of $x_t$ given $bel(x_{t-1})$ and $u_t$\cite{probrob}. This requires the \emph{movement model} $p(x_t \mid u_t,x_{t-1})$ and may be given by a direct summation in the case of a discrete state space. $bel(x_t)$ can be calculated from the \emph{measurement model} $p(z_t \mid x_t)$ and $\overline{bel}(x_t)$ through a single application of Bayes' Theorem.
 
 \begin{algorithm}[H]
 \caption{Bayes Filter}
@@ -68,11 +68,9 @@ The Bayes Filter is an algorithm used to calculate the belief $bel(x_t)$. It is 
 \end{algorithmic}
 \end{algorithm}
 
-The algorithm in its current form is not, however, practical as it needs a sum over the entire state space for all the values in $x_t$. For continuous random variables this is accomplished via an integral which requires both a deep understanding of the environment to set up the distribution as well as solving an integral, which is an inefficient process for a computer. For discrete valued values, this is accomplished via a sum, which may, given complex systems, have a large number of terms. Therefore the algorithm is both difficult and time consuming in its current form.
+However, this algorithm is intractable in all but the simplest of scenarios, requiring a sum over the entire state space for all $x_t$. For continuous random variables, this is accomplished via an integral which in general, does not necessarily have an analytic solution. For finite state spaces, this is accomplished via a summation over the state space, which may, too be impractically computationally expensive. On the other hand, the normalisation of the measuremement update $\eta$ is easily calculated as a summation over the unnormalised posterior, as the posterior is calculated for all $x_t$.
 
-% DEFINATELY rewrite this. It doesnt really make sense.
-It is possible, however, to simplify this process by making a number of assumptions about the input. These assumptions may allow us not to sum over the entire state space, or replace this step by another equivalent process, allowing us to run the filter in a far shorter amount of time or using simpler operations.
-
+It is, however, possible to simplify or approximate the algorithm given certain restrictions on the input. Both the Kalman and Particle Filters provide practical implementions of the Bayes Filter by making suitable assumptions or approximations.
 %; in practice, this may not be strictly necessary and acceptable results may be achieved with a state which is not complete\cite{probrob}
 
 
@@ -80,7 +78,7 @@ It is possible, however, to simplify this process by making a number of assumpti
 
 \section*{Kalman Filter}
 
-One of the most common implementations of the Bayes filter is the Kalman Filter. It is structually very similar to Hidden Markov Model, however with the nodes being real valued vectors and the probability model being Gaussian \cite{kalfilter}. It is one of the most studied filtering techniques for a number of reasons, including its simplicity and efficiency.
+One of the most common implementations of the Bayes filter is the Kalman Filter. It is structurally very similar to Hidden Markov Model, however with the nodes being real valued vectors and the probability model being Gaussian \cite{kalfilter}. It is one of the most studied filtering techniques for a number of reasons, including its simplicity and efficiency.
 
 The filter relies on a number of assumptions about the inputs, above those made by the Bayes' Filter, namely:
 \begin{enumerate}
@@ -89,11 +87,11 @@ The filter relies on a number of assumptions about the inputs, above those made 
 			x_{t} = A_{t} x_{t-1} + B_{t} u_{t} + \epsilon _{t}
 		\end{equation}
 		Since $A_{t}$ and $B_{t}$ are constant, the state transition function is linear in its arguments. The noise is a multivariate gaussian with mean zero and covariance $R_t$.
-	\item The measurement propability must also be linear in its arguments, again with added Gaussian nose. It is expressed as:
+	\item The measurement probability must also be linear in its arguments, again with added Gaussian nose. It is expressed as:
 		\begin{equation}
 			z_{t} = C_{t} x_{t} + \delta _{t}
 		\end{equation}
-		The value $\delta_t$ gives measurement noise (i.e. an estimate of the uncertainty of the sensors), and is a multivariate gaussian witha mean of zero and covariance $Q_t$.
+		The value $\delta_t$ gives measurement noise (i.e. an estimate of the uncertainty of the sensors), and is a multivariate Gaussian with a mean of zero and covariance $Q_t$.
 	\item The initial belief $bel(x_0)$ must be normally distributed. This is denoted:
 		\begin{equation}
 			bel(x_0) = P(x_0) \sim \mathcal{N}(\mu_0, \Sigma_0)
@@ -102,11 +100,13 @@ The filter relies on a number of assumptions about the inputs, above those made 
 \end{enumerate}
 Under these assumptions, we can show that for any $t$, the posterior $bel(x_{t})$ is always Gaussian \cite{kalmanderiv}.
 
-The constant terms of the state transition probability, $A_{t}$ and $B_{t}$ are matrices which represent some physical relationship between the terms of the state vector ($x_{t-1}$) and the control vector ($u_{t}$). As such, if the dimension of the state vector is $n$ and the dimension of the conrol vector is $m$ then the matrix $A_{t}$ is a $n \times n$ matrix, and the matrix $B_{t}$ is a $n \times m$ matrix, such that the posterior state vector is also a vector of dimension $n$. 
+In the following discussion, the terms $bel(x_t)$ and $\mu_t$ will be used interchangeably to indicate the current state of the belief.
+
+The constant terms of the state transition probability, $A_{t}$ and $B_{t}$ are matrices which represent some physical relationship between the terms of the state vector ($x_{t-1}$) and the control vector ($u_{t}$). As such, if the dimension of the state vector is $n$ and the dimension of the control vector is $m$ then the matrix $A_{t}$ is a $n \times n$ matrix, and the matrix $B_{t}$ is a $n \times m$ matrix, such that the posterior state vector is also a vector of dimension $n$. 
 
 The random variable $\epsilon _{t}$ is a Gaussian random vector of dimension $n$ that represents the uncertainty introduced by the state transition. It has a mean of zero, and covariance $R_{t}$.
 
-The filter runs in two stages, the time update and the measurement update. In the time update stage, with the knowledge that the mean represents the most likely state, and the covariance the uncertainty in the state, we want to calculate a new distribution conditioned on the measurement vectors $(z_0, z_1, ..., z_{t-1})$, in other words, not utilizing the new measurement vector. We can express this as the following, where $\overline{\mu}_{t}$ represents the mean and $\overline{\Sigma}_{t}$ represents the covariance. To sumarize, by definition \cite{kalfilter}:
+The filter runs in two stages, the time update and the measurement update. In the time update stage, with the knowledge that the mean represents the most likely state, and the covariance the uncertainty in the state, we want to calculate a new distribution conditioned on the measurement vectors $(z_0, z_1, ..., z_{t-1})$, in other words, not utilizing the new measurement vector. We can express this as the following, where $\overline{\mu}_{t}$ represents the mean and $\overline{\Sigma}_{t}$ represents the covariance. To summarize, by definition \cite{kalfilter}:
 \begin{eqnarray}
 \label{eq:postmean}
 \overline{\mu}_{t} &\equiv& E\left[x_{t} \mid z_0,...,z_{t-1}\right] \\
@@ -114,12 +114,12 @@ The filter runs in two stages, the time update and the measurement update. In th
 \overline{\Sigma}_{t} &\equiv& E\left[(x_{t} - \overline{\mu}_{t})(x_{t} - \overline{\mu}_{t})^T \mid z_0,...,z_{t-1}\right]
 \end{eqnarray}
 
-Considering first the time update, we simply propogate the distribution forward one step in time, calculating a new mean and covariance based on the old mean and covariance, without considering measurements. The mean is simply found by calculating the linear expression for the state transition probability ($A_{t} x_{t-1} + B_{t} u_{t} + \epsilon_{t}t$). We can find that the covariance is given by definition (eq ~\ref{eq:postvar}) to be:
+Considering first the time update, we simply propagate the distribution forward one step in time, calculating a new mean and covariance based on the old mean and covariance, without considering measurements. The mean is simply found by calculating the linear expression for the state transition probability ($A_{t} x_{t-1} + B_{t} u_{t} + \epsilon_{t}t$). We can find that the covariance is given by definition (eq. ~\ref{eq:postvar}) to be:
 \begin{equation}
 \overline{\Sigma}_{t} = A_{t} \Sigma_{t-1} A_{t}^T + R_{t}
 \end{equation}
 
-In the measurement update step, we need to calculate the the conditional mean and covariance of $y_{t+1}$, and the conditional convariance of $x_{t+1}$ and $y_{t+1}$. Knowing this we can write the joint conditional distribution of $x_{t+1}$ and $y_{t+1}$. We can then just reverse the process using the definitions of the bayes didistribution. We find then that the end result is:
+In the measurement update step, we need to calculate the conditional mean and covariance of $y_{t+1}$, and the conditional covariance of $x_{t+1}$ and $y_{t+1}$. Knowing this we can write the joint conditional distribution of $x_{t+1}$ and $y_{t+1}$. We can then just reverse the process using the definitions of the Bayes distribution. We find then that the end result is:
 \begin{eqnarray}
 \mu_{t} &=& \overline{\mu}_{t} + \overline{\Sigma}_{t} C_{t}^T (C_{t} \overline{\Sigma}_{t} C_{t}^T + Q_t)^{-1}C_t (z_{t} - C_{t} \overline{\mu}_{t}) \\
 \Sigma_{t} &=& \overline{\Sigma}_{t} - \overline{\Sigma}_{t} C_{t}^T (C_{t} \overline{\Sigma}_{t} C_{t}^T + R_{t})^{-1}C_{t} \overline{\Sigma}_{t}
@@ -149,21 +149,23 @@ The algorithm for the Kalman filter is thus: \cite{probrob}
 
 The new belief is thus represented by $bel(t) = \mu_t$ with covariance $\Sigma_t$. We notice that in using the previous belief $bel(t-1)$ in place of the hidden state, we need only to consider the measurement variable of the new state, without considering previous measurements.
 
-By substitution into the definition of the multivariate gaussian distribution, we can find the probability distribution of the state space.
+By substitution of $\mu_t$ and $\Sigma_t$ into the definition of the multivariate Gaussian distribution, we can find the probability distribution of the state space.
 
 It is interesting to note that the Kalman filter can be interpreted as a LMS error correcting algorithm. We can through simplification of the Kalman filter find that it is functionally equivalent to the LMS algorithm.
 
 \section*{Particle Filter}
 
 %Overview of a particle filter - state represented as a sampling of possible states
-Whereas the Kalman Filter represents the belief as a paramaterised gaussian distribution, the Particle Filter is non-parameterised, representing the belief at time $t$ as a finite set $\chi_t$ of $M$ states $\{x^{[1]}_t, x^{[2]}_t, \cdots , x^{[M]}_t\}$ drawn from the state space according to the distribution of the posterior. By increasing the size of the particle filter, $\chi$ can be made to approximate any distribution without any regards to constraints such as unimodality\cite{Thrun02d}.
+Whereas the Kalman Filter represents the belief as a parameterised Gaussian distribution, the Particle Filter is non-parameterised, representing the belief at time $t$ as a finite set $\chi_t$ of $M$ states $\{x^{[1]}_t, x^{[2]}_t, \cdots , x^{[M]}_t\}$ drawn from the state space according to the distribution of the posterior. By increasing the number of particles, $\chi$ can be made to asymptotically approximate any distribution without any regards to constraints such as uni-modality\cite{Thrun02d}.
 
-At the start of the algorithm, the set of particles $\chi_0$ are drawn according to the distribution of the start state $p(x_0)$ (Equation \ref{eq:particle_initial}). At time $t$, a new hypothetical state $x^{[m]}_t$ is generated from each particle $x^{[m]}_{[t-1]}$ for each $m \in [1,M]$ by sampling a state from the distribution of the state transition probability (Equation \ref{eq:particle_prediction}). These new states belong to $\bar{\chi}_t$. Next, a resampling step randomly selects with replacement $M$ particles from $\bar{\chi}_t$ into $\chi_t$ with weights $w^{[m]}_t$ given by the measurement model (Equation \ref{eq:particle_weight}).
+At the start of the algorithm, the set of particles $\chi_0$ are drawn according to the distribution of the start state $p(x_0)$ (Equation \ref{eq:particle_initial}). At time $t$, a single new hypothetical state $x^{[m]}_t$ is generated from each particle $x^{[m]}_{t-}$ for $m \in [1,M]$ by sampling a state from the distribution of the state transition probability (Equation \ref{eq:particle_prediction}). These new states belong to $\bar{\chi}_t$ which is distributed according to the predicted belief $p(x_t \mid u_t,x^{[m]}_{t-1})$.
+
+From the Bayes Filter (Algorithm \ref{alg:bayes}), $bel(x_t) = \eta p(z_t \mid x_t) \overline{bel}(x_t)$. To produce the desired target distribution from $\bar{\chi}_t$ according to this relationship, $\bar{\chi}_t$ must be resampled with each particle weighted by the measurement model $p(z_t \mid x_t)$. For each $x^{[m]}_{t}$, a weight $w^{[m]}_t$ is calculated (Equation \ref{eq:particle_weight}). Next, a re-sampling step randomly selects with replacement $M$ particles from $\bar{\chi}_t$ into $\chi_t$ with each particle $x^{[m]}_{t}$ weighted by $w^{[m]}_t$ given by the measurement model\cite{probrob}.
 
 \begin {align}
   x^{[m]}_0 \sim  p(x_0) \label{eq:particle_initial}\\
   x^{[m]}_t \sim p(x_t \mid u_t,x^{[m]}_{t-1}) \label{eq:particle_prediction} \\
-  w^{[m]}_t = \eta p(z_t \mid \bar{x}^{[m]}_t) \label{eq:particle_weight}
+  w^{[m]}_t = \eta p(z_t \mid x^{[m]}_t) \label{eq:particle_weight}
 \end {align}
 
 Hence, the complete algorithm is:
@@ -189,9 +191,9 @@ Hence, the complete algorithm is:
 
 It can be shown through induction on Bayes' Rule that $bel(x_{0:t})$ can be given by Equation \ref{eq:particle_equation}.
 \begin{align}
-  bel(x_{0:t}) & = \eta w^{[m]}_tp(x_t \mid x_{t-1}, u_t)p(x_{0:t-1} \label{eq:particle_equation}
+  bel(x_{0:t}) & = \eta w^{[m]}_tp(x_t \mid x_{t-1}, u_t)p(x_{0:t-1} \mid z_{0:t-1},u_{0:t-1}) \label{eq:particle_equation}
 \end{align}
-Following this algorithm, asymptotically $\lim_{M \to \infty} x^{[i]}_t \ sim p(x_t \mid z_{1:t}, u_{1:t})$.
+Following this algorithm, asymptotically $\underset{M \to \infty}{\lim} x^{[i]}_t \sim p(x_t \mid z_{1:t}, u_{1:t})$.
 
 %Weighting
 
@@ -199,25 +201,30 @@ Following this algorithm, asymptotically $\lim_{M \to \infty} x^{[i]}_t \ sim p(
 
 \section*{Discussion}
 
-Bayes Filter (Algorithm \ref{alg:bayes}) provides a mathematical algorithm for calculating $bel(x_t)$; however, in general, it is not turing-computable or is otherwise impractical \cite{probrob}. By assuming $x_t$ may be represented by a gaussian distribution and that state transitions are linear, the Kalman Filter provides a practical implementation of the Bayes Filter. Furthermore, by representing the belief distribution as a set of state samples which can be individually updated, the Particle Filter provides an alternate practical implementation of Bayes.
+Bayes Filter (Algorithm \ref{alg:bayes}) provides a mathematical algorithm for calculating $bel(x_t)$; however, in general, it is not Turing-computable or is otherwise impractical \cite{probrob}. By assuming $x_t$ may be represented by a Gaussian distribution and that state transitions are linear, the Kalman Filter provides a practical implementation of the Bayes Filter. Furthermore, by representing the belief distribution as a set of state samples which can be individually updated, the Particle Filter provides an alternate practical implementation of Bayes. Both of these algorithms, in general, run in a much shorter amount of time.
 
-In most applications the Kalman Filter is $O(k^{2.4} + n^2)$ when n is the dimension of the state vector and k the dimension of the measurement vector\cite{probrob}, making the Kalman Filter in practice extremely efficient. Furthermore, as the filter consists almost entirely of matrix operations, which has been the subject of intense research, it can be implemented using a number of very efficient algorithms for matrix arithmetic.
+In most applications the Kalman Filter is $O(k^{2.4} + n^2)$ where $n$ is the dimension of the state vector and $k$ the dimension of the measurement vector\cite{probrob}. As the filter consists almost entirely of matrix operations, which has been the subject of intense research, it can be implemented using a number of very efficient algorithms for matrix arithmetic. However, the $O(n^2)$ leads to significant scalability issues in high dimensional spaces making performance beyond a few thousand features poor in most modern implementations \cite{Thrun02d}.
 
-The time complexity of the particle filter is dependant on the number of particles, and the final accuracy is dependant on the number of particles used. The complexity depends on both the number of particles and the dimensionality of the model. With too low a number of particles, the accuracy of the particle filter drops and may even estimate a belief that is not close to the true state. However, as the number of particles increases the complexity of calculating a belief increases a great deal.
-%What is the computational efficiency of the Particle Filter? How does it compare in practice? Is it O(m* n^2)?
+The time complexity of certain particle filter implementations can achieve $O(M \log n)$\cite{Thrun02d}. Consequently, particle filters scale far better to high dimensional problems. As the filter only asymptotically produces the correct distribution, too few particles may produce inaccurate or misleading reasults. Nonetheless, as performance is linear in $M$, the algorithm can be efficiently scaled to the desired degree of accuracy.
 
-The assumption by the Kalman Filter that the posterior can be represented by a gaussian only produces meaningful results for unimodal distributions. However, multimodal distributions commonly occur in applications such as SLAM as there may exist multiple hypotheses. In these cases, the Kalman filter will produce a belief which is a linear combination of the modes of the distribution. This may end up representing a belief that does not correspond to reality. This limits its use in those cases where multiple beliefs are equally likely, or when there is not yet enough information to determine one particular state.
+The assumption by the Kalman Filter that the posterior can be represented by a Gaussian only produces meaningful results for unimodal distributions. However, multi-modal distributions commonly occur in applications such as SLAM as there may exist multiple hypotheses. In these cases, the Kalman filter will produce a belief which is a linear combination of the modes of the distribution. Consequently, a belief may be produced that is impossible or otherwise meaningless within the parameters of the problem. This limits its use in those cases where multiple beliefs are equally likely, or when there is not yet enough information to determine one particular state.
 
- The Particle Filter is equally applicable to multimodal and unimodal distributions, though a larger $M$ may be needed for accurate results if the distribution consists of many alternate hypotheses, or the model has a high dimensionality. Therefore in particular in application such as SLAM where multiple hypothesis may exist before information becomes available the particle filter outperforms the Kalman filter. However, as the number of particles increases, and as accuracy becomes more important the Particle Filter's performance deteriorates significantly.
+The Particle Filter is equally applicable to multi-modal and unimodal distributions, though a large $M$ may be needed for accurate results if the distribution consists of many alternate hypotheses or the model has a high dimensionality. Consequently, Particle Filters are readily applicable for purposes such as SLAM, as there commonly may exist multiple valid hypotheses before sufficient information has been collected to resolve the correct mode. 
 
-To address this issue the Kalman Filter may be adapted to multiple hypotheses by representing the posterior as the normalised sum of individual gaussians.
+For multi-modal distributions, the Kalman Filter is inapplicable as presented; however it may be adapted to handle multiple hypotheses by representing the posterior as the normalised sum of individual Gaussians in a Multi-Hypothesis Kalman Filter (MHKF)\cite{probrob}.
 %Disadvantages of MHKFs?
 
-The Kalman Filter is dependent on the linearity of the measurement and movement models; in few practical applications does this assumption hold. Consequently, the basic Kalman Filter is of limited practical utility. This may be overcome by  modifying the algorithm to conditionally apply a different model based on the prior probability distribution (i.e. treat the models as piecewise-linear functions). Alternatively, the Extended Kalman Filter (EKF) allows the models to be arbitrary smooth functions and uses the first-order taylor expansion to linearize the function for the state update. The EKF can be considered a generalisation of the first solution. Due to the linearisation of the functions, the EKF is highly sensitive to nonlinearities (i.e significant higher order terms). This degree of sensitivity is highly dependent on the uncertainty of the prior\cite{probrob}. Consequently, the EKF is fundamentally ill-suited to applications with significant non-linearities in the measurement and movement models and large uncertainties.
+The Kalman Filter also cannot incorporate negative information (i.e. the lack of an expected observation) as this can neither be represented by a gaussian nor a linear combination of gaussians \cite{Thrun02d}. As Particle Filters can asymptotically represent an arbitrary distribution, they do not suffer from this drawback.
 
-Therefore, while the Kalman Filter is paricularly efficient at calculating beliefs, it is limited in the cases where it can be used due to the large number of assumptions made about its inputs (linearity), as well as of the hidden state (unimodal). While the particle filter is more general, and can be applied in a larger number of situations, its accuracy is highly dependant on the number of particles used, and for large numbers of particles, it is significantly slower than the Kalman filter.
+The Kalman Filter is dependent on the linearity of the measurement and movement models; in few practical applications does this assumption hold. Consequently, the basic Kalman Filter is of limited practical utility. This may be overcome by  modifying the algorithm to conditionally apply a different model based on the prior probability distribution (i.e. treat the models as piecewise-linear functions). Alternatively, the Extended Kalman Filter (EKF) allows the models to be arbitrary smooth functions and uses the first-order Taylor expansion to linearize the function for the state update. The EKF can be considered a generalisation of the first solution. Due to the linearisation of the functions, the EKF is highly sensitive to nonlinearities (i.e significant higher order terms). This degree of sensitivity is highly dependent on the uncertainty of the prior\cite{probrob}. Consequently, though the EKF is widely used in practice\cite{probrob}, it is ill-suited to applications with significant non-linearities in the measurement and movement models and large uncertainties.
 
-Ultimately, the decision about what type of filter is more appropriate requires significant knowledge of the situation and the problem the filter is being applied to. The problem of automatically selecting a filtering method and parameters for the filters remains an open problem in the field of robotics, and one that certainly warrants further study.
+Overall, the Kalman Filter can be extremely simple and fast in implementation, however it scales poorly with the dimension of the state vector and is limited in application due to the assumptions that the update is linear and that the state can be validly represented by a gaussian. EKFs generalise the Filter to nonlinear problems, but are nonetheless limited by the degree of nonlinearity; MHKFs allow a wider range of distributions to be represented, but are far from universal.
+
+While the particle filter is more general and can be applied in a larger number of situations, its accuracy is highly dependant on the number of particles used and complexity linear in number of particles.
+
+In high-dimensional problems (i.e a large number of features in the state vector), Kalman filters scale $O(n^2)$ while Particle Filters scale $O(\log n)$. Hence, Kalman filters perform very poorly in such cases.
+
+Ultimately, the decision about what type of filter is more appropriate requires extensive knowledge of the situation and the problem to which the filter is being applied. In applications where the dimension of the state is small and can be reasonably represented by a gaussian, and state transitions are not overley nonlinear, the Kalman filter may perform well. In more general problems, the Particle Filter is likely to be better applicable. In general, the problem of automatically selecting a filtering method and parameters for the filters remains an open problem in the field of robotics which certainly warrants further study.
 
 \bibliographystyle{plain}
 \bibliography{references}
