@@ -38,19 +38,22 @@ class Robot:
 	def tick(self):
 		output = []
 
+		#todo: semantically separate movement and measurement into different times
 		p_x = self.__x
 		p_y = self.__y
 		self.__vx += self.__ax*DELTA_T
 		self.__vy += self.__ay*DELTA_T
 		self.__x += self.__vx*DELTA_T
 		self.__y += self.__vy*DELTA_T
+		self.time += DELTA_T
 		
-		output.append(p_x - self.__x + random.gauss(0, D_DEV))
-		output.append(p_y - self.__y + random.gauss(0, D_DEV))
+		output.append(self.time)
+		output.append(self.__x - p_x + random.gauss(0, D_DEV))
+		output.append(self.__y - p_y + random.gauss(0, D_DEV))
 		output.append(self.__ax + random.gauss(0, A_DEV))
 		output.append(self.__ay + random.gauss(0, A_DEV))
-		output.append(Y_SIZE - self.__y + random.gauss(0, L_DEV))
 		output.append(X_SIZE - self.__x + random.gauss(0, L_DEV))
+		output.append(Y_SIZE - self.__y + random.gauss(0, L_DEV))
 		output.append(self.__x + random.gauss(0, L_DEV))
 		output.append(self.__y + random.gauss(0, L_DEV))
 		output.append(self.__x)
@@ -66,7 +69,6 @@ class Robot:
 
 		self.__moveDone()
 
-		self.time += DELTA_T
 
 def pnt(r, x, y):
 	r.push(x, y)
