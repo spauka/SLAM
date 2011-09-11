@@ -4,7 +4,7 @@
 function x_bar = prediction(px,u)
     A = eye(2);
     B = eye(2);
-    R = 0.1*eye(2);
+    R = 0.01*eye(2);
 
     pmu = px(1:2)';
     psigma = [px(3:4) ; px(5:6)];

@@ -15,9 +15,7 @@ function result = kalman(data)
     %not have zero-indices is REALLY bloody annoying!
     for i = 1:length(time)
         x_bar(i+1,:) = prediction(x_bar(i,:),[dx(i) ; dy(i)]);
+        x(i+1,:) = measurement(x_bar(i+1,:), [left(i) ; right(i) ;down(i); up(i)]);
     end
-    time;
-    x_bar;
-    x;
     result = [[0;time] x_bar x];
 end
