@@ -2,9 +2,10 @@
 %px is in the same format as x
 %u is the column vector [dx ; dy]
 function x_bar = prediction(px,u)
-    A = eye(2);
-    B = eye(2);
-    R = 0.01*eye(2); %movement covariance
+    A = eye(2); % x_t = x_{t-1} + dx
+    B = eye(2); %therefore A=I, B=I
+    global d_dev
+    R = d_dev*d_dev*eye(2); %movement covariance
 
     pmu = px(1:2)';
     psigma = [px(3:4) ; px(5:6)];

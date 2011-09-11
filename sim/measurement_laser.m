@@ -1,11 +1,11 @@
 
 %z is the column vector [left ; right ; down ; up]
-function x = measurement(x_bar,z)
+function x = measurement_laser(x_bar,z)
     function z = h(x)
         z = [x(1) ; 20 - x(1); x(2); 20- x(2)];
     end
-    global d_dev
-    Q = d_dev*d_dev*eye(4); %covariance of z
+    global l_dev
+    Q = l_dev*l_dev*eye(4); %covariance of z
     H = [ 1 0 ; -1 0 ; 0 1 ; 0 -1]; %jacobian of h
 
     mu_bar = x_bar(1:2)';

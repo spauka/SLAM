@@ -17,14 +17,26 @@ y_err = result(:,13).^0.5;
 
 
 figure(1)
+clf
 title('x bar, smoothed x and actual x')
 hold on
 errorbar(time,x_bar,x_bar_err, 'g');
 plot(time(2:end), d(:,10),'m');
 errorbar(time,x,x_err, 'b');
+
 figure(2)
+clf
 title('ybar, smoothed y and actual y')
 hold on
 errorbar(time,y_bar,y_bar_err, 'g');
 plot(time(2:end), d(:,11),'m');
 errorbar(time,y,y_err, 'b');
+
+figure(3)
+clf
+title('filtered x and y vs actual position')
+errorbarxy(x,y,x_err,x_err,y_err,y_err,'b','b');
+hold on
+plot(d(:,10),d(:,11),'g');
+
+
