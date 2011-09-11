@@ -2,10 +2,11 @@
 %z is the column vector [left ; right ; down ; up]
 function x = measurement(x_bar,z)
     function z = h(x)
-       z = [x(1) ; 20 - x(1); x(2); 20- x(2)];
+        z = [x(1) ; 20 - x(1); x(2); 20- x(2)];
     end
-    Q = 0.0001 * eye(4); %covariance of z
-    H = [ 1 0 ; -1 0 ; 0 1 ; 0 -1]; %calculated from EKF using jacobian
+    global d_dev
+    Q = d_dev*d_dev*eye(4); %covariance of z
+    H = [ 1 0 ; -1 0 ; 0 1 ; 0 -1]; %jacobian of h
 
     mu_bar = x_bar(1:2)';
     sigma_bar = [x_bar(3:4); x_bar(5:6)];
