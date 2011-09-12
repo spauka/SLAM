@@ -1,4 +1,4 @@
-filename = 'robotdata_3'
+filename = 'sim4';
 
 d = getData(filename);
 
@@ -35,7 +35,7 @@ errorbar(time,y,y_err, 'b');
 figure(3)
 clf
 title('filtered x and y vs actual position')
-errorbarxy(x,y,x_err,x_err,y_err,y_err,'b','b');
+errorbarxy(x,y,x_err,x_err,y_err,y_err,'Color','b','LineWidth', 2);
 hold on
 plot(d(:,10),d(:,11),'g');
 

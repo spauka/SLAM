@@ -3,10 +3,10 @@ import math
 # First we define constants
 X_SIZE = 20.0 # Room size
 Y_SIZE = 20.0
-DELTA_T = 0.01 # Time per period
-D_DEV = 0.0 # Position change Deviation (16) (0.1)
-A_DEV = 0.0 # Accelleration Deviation (17) (0.5)
-L_DEV = 0.0 # Laser Deviation (18) (0.1)
+DELTA_T = 0.1 # Time per period
+D_DEV = 0.1 # Position change Deviation (16) (0.1)
+A_DEV = 0.2 # Accelleration Deviation (17) (0.5)
+L_DEV = 0.1 # Laser Deviation (18) (0.1)
 
 # Define a robot class
 class Robot:
@@ -78,6 +78,6 @@ if __name__ == "__main__":
 	# Make the robot move in a circle
 	r = Robot()
 	while r.time <= 2:
-		pnt(r, 10*math.sin(r.time*math.pi), 10*math.cos(r.time*math.pi))
+		pnt(r, 1*math.sin(r.time*math.pi), 1*math.cos(r.time*math.pi))
 	while r.time <= 4:
-		pnt(r, -10*math.sin(r.time*math.pi), -10*math.cos(r.time*math.pi))
+		pnt(r, -1*math.sin(r.time*math.pi), -1*math.cos(r.time*math.pi))
