@@ -3,6 +3,7 @@ import math
 # First we define constants
 X_SIZE = 20.0 # Room size
 Y_SIZE = 20.0
+
 DELTA_T = 0.1 # Time per period
 D_DEV = 0.1 # Position change Deviation (16) (0.1)
 A_DEV = 0.2 # Accelleration Deviation (17) (0.5)
