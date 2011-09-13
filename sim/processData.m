@@ -1,4 +1,4 @@
-filename = 'robotdata_3'
+filename = 'sim4';
 
 d = getData(filename);
 
@@ -21,22 +21,22 @@ clf
 title('x bar, smoothed x and actual x')
 hold on
 errorbar(time,x_bar,x_bar_err, 'g');
-plot(time(2:end), d(:,10),'m');
 errorbar(time,x,x_err, 'b');
+plot(time(2:end), d(:,10),'r');
 
 figure(2)
 clf
 title('ybar, smoothed y and actual y')
 hold on
 errorbar(time,y_bar,y_bar_err, 'g');
-plot(time(2:end), d(:,11),'m');
 errorbar(time,y,y_err, 'b');
+plot(time(2:end), d(:,11),'r');
 
 figure(3)
 clf
 title('filtered x and y vs actual position')
-errorbarxy(x,y,x_err,x_err,y_err,y_err,'b','b');
+errorbarxy(x,y,x_err,x_err,y_err,y_err,'Color','b','LineWidth', 2);
 hold on
-plot(d(:,10),d(:,11),'g');
+plot(d(:,10),d(:,11),'r');
 
 
