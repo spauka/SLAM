@@ -17,6 +17,7 @@ function [ chi_t, chi_t_bar ] = ParticleFilter( chi_t_1, u_t, z_t )
     
     omega_t = (1./sum(omega_t)).*omega_t;
     omega_t = cumsum(omega_t);
+    
     for m = 1:M
         x = rand(1);
         ind = 1;

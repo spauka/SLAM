@@ -21,7 +21,7 @@ DELTA_T = 0.1;
 % Measurement Uncertainties
 D_DEV = 0.1;
 A_DEV = 0.1;
-L_DEV = 0.2;
+L_DEV = 0.1;
 
 % We represent the particles as state vectors containing: 
 % [x; y; vx; vy; dx; dy]
