@@ -2,6 +2,8 @@ filename = 'sim4';
 
 d = getData(filename);
 
+global left down
+
 result = kalman(d);
 time = result(:,1);
 x_bar = result(:,2);
@@ -23,6 +25,7 @@ hold on
 errorbar(time,x_bar,x_bar_err, 'g');
 errorbar(time,x,x_err, 'b');
 plot(time(2:end), d(:,10),'r');
+plot(time(2:end),left,'m','LineWidth',2);
 
 figure(2)
 clf
@@ -31,6 +34,7 @@ hold on
 errorbar(time,y_bar,y_bar_err, 'g');
 errorbar(time,y,y_err, 'b');
 plot(time(2:end), d(:,11),'r');
+plot(time(2:end),down,'m','LineWidth',2);
 
 figure(3)
 clf
