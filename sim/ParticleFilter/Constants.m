@@ -8,7 +8,7 @@ X_SIZE = 20;
 Y_SIZE = 20;
 
 % Update Noise
-UP_DEV = 0.1;
+UP_DEV = 0.03;
 UA_DEV = 0.02;
 
 % Assume that the initial speed is normally distributed around zero.
