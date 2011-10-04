@@ -113,6 +113,11 @@ class Pose:
   def __repr__(self):
     return self.__str__()
 
+  def ray(self):
+    r = array([cos(th),sin(th)])
+    X = array([x,y])
+    return (X,r)
+
   def plot(self):
     plt.plot(self.x,self.y,'ok')
     d = 0.1
@@ -166,6 +171,27 @@ class Robot_Sim:
     self.t = self.t + dt
     self.u = odom.sample_motion((self.prev_x,self.x),self.prev_x)
     self.z = meas.sample_measurement(self.env, self.x)
+    return (self.t,self.u,self.z)
+
+  def move_along(self, P, v_max, w_max, dt):
+    r = v_max/w_max
+    dx = v_max*dt
+    for i in range(len(P)-1):
+      S = Segment(array(P[i]),array(P[i+1]))
+      (X,r) = self.x.ray()
+      I = S.intersect(X,r)
+      X_I = I - X
+      d = sqrt(dot(X_I,X_I))
+      d_adj = d + (dx/2)
+      #A = -cos(alpha) = cos(pi-alpha) where alpha is the angle between r and S.d
+      A =-dot(r,S.d)/sqrt(dot(S.d,S.d))
+      #B = cot(pi-alpha)
+      B = A / sqrt(1-A**2)
+      if (r < d
+
+
+      
+    
 
   def measure(self):
     return self.z
