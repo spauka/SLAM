@@ -1,4 +1,4 @@
-from numpy import array
+from numpy import array, cross
 from environment import *
 from random import gauss
 from math import sin, cos, atan2, pi, isnan
@@ -19,7 +19,9 @@ class Robot_Measurement_Model:
 
   def sample_measurement(self, env, x):
     Z = []
-    if (self.measure_count == 1):
+    if (self.measure_count <= 0):
+      pass
+    elif (self.measure_count == 1):
       Z = [(0,env.intersect(x.x,x.y,x.th))]
     else:
       dth = self.fov/(self.measure_count-1)
@@ -114,8 +116,8 @@ class Pose:
     return self.__str__()
 
   def ray(self):
-    r = array([cos(th),sin(th)])
-    X = array([x,y])
+    r = array([cos(self.th),sin(self.th)])
+    X = array([self.x,self.y])
     return (X,r)
 
   def plot(self):
@@ -174,20 +176,85 @@ class Robot_Sim:
     return (self.t,self.u,self.z)
 
   def move_along(self, P, v_max, w_max, dt):
-    r = v_max/w_max
-    dx = v_max*dt
-    for i in range(len(P)-1):
-      S = Segment(array(P[i]),array(P[i+1]))
-      (X,r) = self.x.ray()
-      I = S.intersect(X,r)
-      X_I = I - X
-      d = sqrt(dot(X_I,X_I))
-      d_adj = d + (dx/2)
-      #A = -cos(alpha) = cos(pi-alpha) where alpha is the angle between r and S.d
-      A =-dot(r,S.d)/sqrt(dot(S.d,S.d))
-      #B = cot(pi-alpha)
-      B = A / sqrt(1-A**2)
-      if (r < d
+    sgn = lambda x : -1.0 if (x < 0) else 1.0
+    mag = lambda x: sqrt(dot(x,x))
+    
+    R0 = v_max/w_max
+    x_er = v_max*dt/2
+    count = 0
+    while (len(P) >= 3):
+      S_cur = Segment(array(P[0]),array(P[1]))
+      S_next = Segment(array(P[1]),array(P[2]))
+      P.pop(0) 
+
+      S_cur.plot()
+      S_next.plot()
+   
+      S_cur_d = S_cur.d/mag(S_cur.d)
+      S_next_d = S_next.d/mag(S_next.d)
+
+      A_vertex = dot(S_cur_d,S_next_d)
+      B_vertex = sqrt(1-A_vertex**2)/(1+A_vertex)
+      d_vertex = R0*B_vertex
+  
+      print()
+      print("S:",S_cur,"S_cur_d:",S_cur_d,"d_vertex:",d_vertex)
+      while (count < 500):
+        count = count + 1
+        (X,r) = self.x.ray()
+        #First the termination condition for this segment
+        x_vertex = S_cur.x2 - X
+        if (mag(x_vertex) <= x_er + d_vertex or sgn(dot(S_cur.d,x_vertex)) <= 0 ):
+          plt.plot(self.x.x,self.x.y,'+r')
+          break              
+
+        #Find the intersection point
+        I = line_intersect(X,X+r,S_cur.x1,S_cur.x2)
+        X_I = I - X
+        if (isnan(I[0]) or isnan(I[1])):
+          if (dist_point_line(X,S_cur.x1,S_cur.d > x_er)):
+            print("nan I with S =",S_cur)
+            near_point = near_point_line(X,S_cur.x1,S_cur_d)
+            print("near_point:",near_point)
+            P.insert(0, (near_point[0],near_point[1]))
+            P.insert(0,(self.x.x,self.x.y))            
+            break
+          else:
+            u = (v_max,0)
+        else:
+          d = mag(X_I)
+          A = dot(X_I,S_cur_d)/d
+          B = sqrt(1-A**2)/(1+A)
+          d0 = R0*B
+        
+          rxd = cross(r,S_cur_d)
+
+          w = (B*v_max/d)
+
+          plt.plot([X[0],X[0]+S_cur_d[0]/4],[X[1],X[1]+S_cur_d[1]/4],"b-")
+          print("A: {0:.2f} B: {1:.2f} d0: {2:.2f} d: {3:.2f} rxd: {4:.2f} w: {5:.2f}".format(A,B,d0,d,rxd,w))
+        
+          u = (0,0)
+
+          if ((sgn(dot(r,S_cur_d)) > 0 and d > d0 + x_er) or (d < x_er/10)):
+            print("A")
+            plt.plot(self.x.x,self.x.y,'ob')
+            u = (v_max,0)
+          elif (w <= w_max):
+            print("B")
+            plt.plot(self.x.x,self.x.y,'og')
+            u = (v_max,w*sgn(rxd))
+          else:
+            print("C")
+            plt.plot(self.x.x,self.x.y,'oy')
+            u = (w_max * d/B, w_max*sgn(rxd))
+            
+          
+        print("u: {0:.2f}, {1:.2f}".format(u[0],u[1]))
+        self.tick(u,dt)
+        #print(self)
+        self.plot()
+        
 
 
       
@@ -240,11 +307,13 @@ if __name__ == "__main__":
 
   mot = Robot_Motion_Model()
   odom = Robot_Odometry_Model()
-  meas = Robot_Measurement_Model(measure_count=4,fov=pi/4)
+  meas = Robot_Measurement_Model(measure_count=0,fov=pi/4)
   start_pose = Pose(0,1.5,0)
 
   r = Robot_Sim(env,mot,odom,meas,start_pose)
 
+  r.move_along([(0,1.5),(1.5,1.5),(3.5,2.5),(10,3.0),(10,10),(9,10),(9,9.5),(9.5,9.5),(9.5,5),(0,5),(0,10)],2,5,0.1)
+  """
   while (r.x.x < 0.8):
     u = (2,0.0) #forward, angular velocity
     r.tick(u,0.1)
@@ -258,11 +327,11 @@ if __name__ == "__main__":
     r.plot()
 
   for i in range(10):
-    u = (2,0.0) #forward, angular velocity
+    u = (2,-5) #forward, angular velocity
     r.tick(u,0.1)
     print(r)
     r.plot()
-
+  """
     
 
   

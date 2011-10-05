@@ -49,26 +49,31 @@ class Rect(Obstacle):
     self.segments.append(Segment(c+h,c))
 
 class Segment:
-  __x1 = array([0,0])
-  __x2 = array([0,0])
-  __d = array([0,0])
+  x1 = array([0,0])
+  x2 = array([0,0])
+  d = array([0,0])
 
   def __init__(self, x1, x2):
-    assert(x1 != x2)
-    self.__x1 = x1
-    self.__x2 = x2
-    self.__d = x2 - x1
+    assert(not all(x1 == x2))
+    self.x1 = x1
+    self.x2 = x2
+    self.d = x2 - x1
+
+  def __str__(self):
+    return " ".join(list(map(str,[self.x1,self.x2])))
 
   def plot(self):
-    plt.plot([self.__x1[0],self.__x2[0]],[self.__x1[1],self.__x2[1]],'-k')
+    plt.plot([self.x1[0],self.x2[0]],[self.x1[1],self.x2[1]],'-k')
   def intersect_dist(self, x, r):
     Xi = self.intersect(x,r)
+    if (isnan(Xi[0]) or isnan(Xi[1])):
+      return float('nan')
     x_Xi = Xi -x
     return sqrt(dot(x_Xi,x_Xi))
 
   def intersect(self, x, r):
-    Xi = line_intersect(self.__x1,self.__x2,x,x+r)    
-    if (Xi[0] = nan or Xi[1] = nan):
+    Xi = line_intersect(self.x1,self.x2,x,x+r)    
+    if (isnan(Xi[0]) or isnan(Xi[1])):
       return Xi
 
     p_i = Xi - x
@@ -78,30 +83,18 @@ class Segment:
       s = p_i[0]/r[0]
 
 
-    x1_i = Xi - self.__x1
-    if (abs(self.__d[0]) < abs(self.__d[1])):
-      t = x1_i[1]/self.__d[1]
+    x1_i = Xi - self.x1
+    if (abs(self.d[0]) < abs(self.d[1])):
+      t = x1_i[1]/self.d[1]
     else:
-      t = x1_i[0]/self.__d[0]
+      t = x1_i[0]/self.d[0]
 
-    """
-    print("x1:",self.__x1, "x2:", self.__x2)    
-    print("i:", i)
-    d = sqrt(dot(p_i,p_i))
-    X = x + d*r
-    plt.plot([x[0],X[0]],[x[1],X[1]],'-y')
-    plt.plot(xi,yi,'om')
-    print("x->i:", p_i, "r:", r, "x->i/r:", s)
-    print("x1->i:",x1i,"d:",self.__d,"x1->i/d:", t)
-    print("d:",d)
-    print()
-    """
     if (s > 0 and 0 <= t and t <= 1):
       #return the distance to the point of intersection
       return Xi
     else:
       #no valid intersection
-      return array(float('nan'),float('nan'))
+      return array([float('nan'),float('nan')])
     
 
 """Find the intersection point of the lines X1->X2 and X3->X4"""
@@ -114,22 +107,30 @@ def line_intersect(X1,X2,X3,X4):
   x3 = X3[0]
   y3 = X3[1]
   x4 = X4[0]
-  y5 = X5[1]
+  y4 = X4[1]
   
   xi = (x1*y2 - y1*x2)*(x3-x4) - (x1-x2)*(x3*y4-y3*x4)
   div = ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) )
   if (div == 0):
-    return array(float('nan'),float('nan'))
+    return array([float('nan'),float('nan')])
   xi = xi/div
 
   yi = (x1*y2 - y1*x2)*(y3-y4) - (y1-y2)*(x3*y4-y3*x4)
   div = ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) )
   if (div == 0):
-    return array(float('nan'),float('nan'))
+    return array([float('nan'),float('nan')])
   yi = yi/div
 
   return array([xi,yi])
 
+def dist_point_line(x,p,d):
+  px = p-x
+  X = px - dot(px,d)*d
+  return dot(X,X)
+def near_point_line(x,p,d):
+  px = p-x
+  X = px - dot(px,d)*d
+  return x+X
 if __name__ == "__main__":
   x = Rect(0,0,1,1)
   p1 = array([-1,0.5])
