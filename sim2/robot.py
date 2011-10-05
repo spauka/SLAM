@@ -1,8 +1,8 @@
 from numpy import array, cross
 from environment import *
+from driver import *
 from random import gauss
 from math import sin, cos, atan2, pi, isnan
-
 #Plotting requires matplotlib.
 import matplotlib
 matplotlib.use('Qt4Agg') #Feel free to change the backend
@@ -145,7 +145,7 @@ class Measurement:
         X = x.x + d*cos(th1)
         Y = x.y + d*sin(th1)
         plt.plot([x.x,X],[x.y,Y],'--r')
-  
+
 class Robot_Sim:
   prev_x = Pose(0,0,0)
   x = Pose(0,0,0)
@@ -154,7 +154,7 @@ class Robot_Sim:
   mot = Robot_Motion_Model
   odom = Robot_Odometry_Model
   meas = Robot_Measurement_Model
-
+  
   z = Measurement
   u = Pose
   def __init__(self, env, mot, odom, meas, start_pose):
@@ -173,88 +173,6 @@ class Robot_Sim:
     self.u = odom.sample_motion((self.prev_x,self.x),self.prev_x)
     self.z = meas.sample_measurement(self.env, self.x)
     return (self.t,self.u,self.z)
-
-  def move_along(self, P, v_max, w_max, dt):
-    sgn = lambda x : -1.0 if (x < 0) else 1.0
-    mag = lambda x: sqrt(dot(x,x))
-    
-    R0 = v_max/w_max
-    x_er = v_max*dt/2
-    count = 0
-    while (len(P) >= 2):
-      S = Segment(array(P[0]),array(P[1]))
-      has_next = (len(P) >= 3)
-      P.pop(0) 
-      S.plot()
-      S_d = S.d/mag(S.d)
-      print(len(P))
-      if has_next:
-        S_next = Segment(array(P[0]),array(P[1]))
-        S_next_d = S_next.d/mag(S_next.d)
-        A_vertex = dot(S_d,S_next_d)
-        B_vertex = sqrt(1-A_vertex**2)/(1+A_vertex)
-        d_vertex = R0*B_vertex
-        S_next.plot()
-
-      temp_target = False
-      print()
-      print("S:",S,"S_d:",S_d,"d_vertex:",d_vertex)
-      while (count < 1000):
-        count = count + 1
-        print(count)
-        (X,r) = self.x.ray()
-        x_vertex = S.x2 - X
-        if (mag(x_vertex) <= x_er + d_vertex or (has_next and sgn(dot(S.d,x_vertex)) <= 0) ):
-          break                      
-        
-        #Find the intersection point
-        x_proj = near_point_line(X,S.x1,S_d)
-        dist = mag(x_proj-X)
-        I = Segment(x_proj,S.x2).intersect(X,r)
-        if ((isnan(I[0]) or isnan(I[1])) and not temp_target and dist < R0/4):
-          u = (v_max,0)
-        else:
-          if (isnan(I[0]) or isnan(I[1]) and not temp_target):
-            temp_target = True
-            V = X + r*R0/4
-            g = (S.x1 + x_proj)/2 - V
-            g = g / mag(g)
-            #plt.plot(x_proj[0],x_proj[1],"or")
-            #plt.plot([V[0],(V+g)[0]],[V[1],(V+g)[1]],"-r")
-          elif (not temp_target):
-            V = I
-            g = S_d
-
-          X_V = V - X
-          d = mag(X_V)
-          A = dot(X_V,g)/d
-          try:
-            B = sqrt(1-A**2)/(1+A)
-          except ValueError:
-            u = (v_max,w_max)
-          else:
-            
-            d0 = R0*B
-            
-            rxd = cross(r,S_d)
-            w = (B*v_max/d)
-            #plt.plot([X[0],X[0]+S_d[0]/4],[X[1],X[1]+S_d[1]/4],"b-")
-            
-            u = (0,0)
-            if (sgn(dot(r,S_d)) > 0 and d > d0 + x_er):
-              dist = dist_point_line(X,S.x1,S_d)
-              u = (v_max,0)
-            elif (w <= w_max):
-              #plt.plot(self.x.x,self.x.y,'og')
-              u = (v_max,w*sgn(rxd))
-            else:
-              temp_target = False
-              #plt.plot(self.x.x,self.x.y,'oy')
-              u = (min([w_max * d/B,v_max/8]), w_max*sgn(rxd))
-              #u = (v_max,w*sgn(rxd))
-         
-        self.tick(u,dt)
-        self.plot()
 
   def measure(self):
     return self.z
@@ -300,47 +218,25 @@ def makeEnviron2():
   return e
 if __name__ == "__main__":
   env = makeEnviron2()
-  #s1 = Segment(array([2,0]),array([2,1]))
-  #s2 = Segment(array([0,0]),array([0,1]))
-  #o = Obstacle([s1, s2])
-  #o = Rect(0,0,2,2)
-  #env = Environment([o])
-
   env.plot()
+  P = [(0.5,1.5),(2.5,1.5),(2.5,0.5),(3.5,0.5),(3.5,3.5),(1.5,3.5),(1.5,1.5),(0.5,1.5)]
   plt.ion()
   plt.show()
 
   mot = Robot_Motion_Model()
   odom = Robot_Odometry_Model()
-  meas = Robot_Measurement_Model(measure_count=8,fov=pi/8)
-  start_pose = Pose(0.5,1.5,0)
+  meas = Robot_Measurement_Model(measure_count=0,fov=pi/8)
+  start_pose = Pose(0.5,1.5,2.8)
 
   r = Robot_Sim(env,mot,odom,meas,start_pose)
-
-  #r.move_along([(5,-4),(0,1.5),(1.5,1.5),(3.5,2.5),(10,3.0),(10,10),(9,10),(9,9.5),(9.5,9.5),(9.5,5),(0,5),(0,10)],2,5,1)
-  r.move_along([(0.5,1.5),(2.5,1.5),(2.5,0.5),(3.5,0.5),(3.5,3.5),(1.5,3.5),(1.5,2.5)],2,5,0.1)
-
-  """
-  while (r.x.x < 0.8):
-    u = (2,0.0) #forward, angular velocity
-    r.tick(u,0.1)
-    print(r)
+  print(r)
+  driver = Robot_Driver(r,P,w_max = 2)
+  while (not driver.finished):
+    u = driver.next_control()
+    print(u)
+    r.tick(u,driver.dt)
+    print(driver.count)
     r.plot()
 
-  while (r.x.th < 4*pi/9):
-    u = (2,5) #forward, angular velocity
-    r.tick(u,0.1)
-    print(r)
-    r.plot()
-
-  for i in range(10):
-    u = (2,-5) #forward, angular velocity
-    r.tick(u,0.1)
-    print(r)
-    r.plot()
-  """
-    
-
-  
   plt.ioff()
   plt.show()
