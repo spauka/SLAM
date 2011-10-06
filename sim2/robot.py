@@ -3,10 +3,6 @@ from environment import *
 from driver import *
 from random import gauss
 from math import sin, cos, atan2, pi, isnan
-#Plotting requires matplotlib.
-import matplotlib
-matplotlib.use('Qt4Agg') #Feel free to change the backend
-import matplotlib.pyplot as plt
 
 class Robot_Measurement_Model:
   measure_count = 0
@@ -50,24 +46,23 @@ class Robot_Motion_Model:
   a4 = 0
   a5 = 0
   a6 = 0
-  def __init__(self, a1=0, a2=0, a3=0, a4=0, a5=0, a6=0):
-    self.a1 = a1
-    self.a2 = a2
-    self.a3 = a3
-    self.a4 = a4
-    self.a5 = a5
-    self.a6 = a6
+  def __init__(self, a1=0, a2=0, a3=0, a4=0, a5=0, a6=0, v_max=0,w_max=0):
+    print(locals())
+    self.__dict__.update(locals())
+    print(self.__dict__)
   def sample_motion(self, u, x, dt):
     (v, w) = u
-    vr = gauss(v, self.a1*abs(v) + self.a2*abs(w))
-    wr = gauss(w, self.a3*abs(v) + self.a4*abs(w))
-    gr = gauss(0, self.a5*abs(v) + self.a6*abs(w))
+    vr = gauss(v, self.a1*abs(v) + self.a2*(self.v_max/self.w_max)*abs(w))
+    wr = gauss(w, self.a3*(self.w_max/self.v_max)*abs(v) + self.a4*abs(w))
+    gr = gauss(0, self.a5*(self.w_max/self.v_max)*abs(v) + self.a6*abs(w))
     if (wr == 0):
       x_new = x.x + vr*cos(x.th)*dt
       y_new = x.y + vr*sin(x.th)*dt
     else:
       x_new = x.x + (vr/wr)*( sin(x.th + wr*dt) - sin(x.th))
       y_new = x.y + (vr/wr)*( cos(x.th) - cos(x.th + wr*dt))
+    print("wr:",wr,"x.th + wr*dt:",x.th + wr*dt,"sin1:",sin(x.th + wr*dt),"sin2:",sin(x.th),"dsin:", sin(x.th + wr*dt) - sin(x.th))
+    #print("wr:",wr,"vr:",vr,"x:",x.x,"x_new:",x_new,"y:",x.y,"y_new:",y_new)
     th_new = x.th + wr*dt + gr*dt
     return Pose(x_new,y_new,th_new)
 
@@ -119,7 +114,7 @@ class Pose:
     X = array([self.x,self.y])
     return (X,r)
 
-  def plot(self):
+  def plot(self,plt):
     plt.plot(self.x,self.y,'ok')
     d = 0.1
     X = self.x + d*cos(self.th)
@@ -136,7 +131,7 @@ class Measurement:
   def __repr__(self):
     return str(self)
 
-  def plot(self,x):
+  def plot(self,plt,x):
     for z in self.laser_data:
       (th,d) = z
       th1 = th + x.th
@@ -191,9 +186,10 @@ class Robot_Sim:
   def __repr__(self):
     return str(self)
 
-  def plot(self):
-    self.z.plot(self.x)
-    self.x.plot()
+  def plot(self,plt):
+    
+    self.z.plot(self.x,plt)
+    self.x.plot(plt)
     plt.plot([self.prev_x.x,self.x.x],[self.prev_x.y,self.x.y],'k--')
 
 def gaussian(mu, var, x):

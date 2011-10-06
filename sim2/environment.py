@@ -3,10 +3,6 @@ from functools import *
 from math import isnan, sqrt, pi, exp, sin, cos
 from itertools import chain
 
-import matplotlib
-matplotlib.use('Qt4Agg')
-import matplotlib.pyplot as plt
-
 class Environment:
   obstacles = []
   def __init__(self, obstacles):
@@ -22,9 +18,9 @@ class Environment:
     else:
       return min(D)
 
-  def plot(self):
+  def plot(self,plt):
     for o in self.obstacles:
-      o.plot()
+      o.plot(plt)
    
 class Obstacle:
   segments = []
@@ -34,9 +30,9 @@ class Obstacle:
     D = list(filter(lambda x: not isnan(x), map(lambda s: s.intersect_dist(x,r),self.segments)))
     #print(D)
     return D
-  def plot(self):
+  def plot(self,plt):
     for s in self.segments:
-      s.plot()
+      s.plot(plt)
       
 class Rect(Obstacle):
   def __init__(self,x,y,width,height):
@@ -62,7 +58,7 @@ class Segment:
   def __str__(self):
     return " ".join(list(map(str,[self.x1,self.x2])))
 
-  def plot(self):
+  def plot(self,plt):
     plt.plot([self.x1[0],self.x2[0]],[self.x1[1],self.x2[1]],'-k')
   def intersect_dist(self, x, r):
     Xi = self.intersect(x,r)
