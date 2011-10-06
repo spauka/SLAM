@@ -28,7 +28,6 @@ class Robot_Measurement_Model:
       th0 = -self.fov/2
       for i in range(self.measure_count):
         d = env.intersect(x.x,x.y,x.th+th0+i*dth)
-        #print("**{0:.1f} {1:.1f} {2:.1f}: {3:.3f}".format(x.x,x.y,x.th+th0+i*dth,d))
         d_r = gauss(d,self.sd_hit)
         Z.append((th0+i*dth,d_r))
     return Measurement(Z)
@@ -182,83 +181,80 @@ class Robot_Sim:
     R0 = v_max/w_max
     x_er = v_max*dt/2
     count = 0
-    while (len(P) >= 3):
-      S_cur = Segment(array(P[0]),array(P[1]))
-      S_next = Segment(array(P[1]),array(P[2]))
+    while (len(P) >= 2):
+      S = Segment(array(P[0]),array(P[1]))
+      has_next = (len(P) >= 3)
       P.pop(0) 
+      S.plot()
+      S_d = S.d/mag(S.d)
+      print(len(P))
+      if has_next:
+        S_next = Segment(array(P[0]),array(P[1]))
+        S_next_d = S_next.d/mag(S_next.d)
+        A_vertex = dot(S_d,S_next_d)
+        B_vertex = sqrt(1-A_vertex**2)/(1+A_vertex)
+        d_vertex = R0*B_vertex
+        S_next.plot()
 
-      S_cur.plot()
-      S_next.plot()
-   
-      S_cur_d = S_cur.d/mag(S_cur.d)
-      S_next_d = S_next.d/mag(S_next.d)
-
-      A_vertex = dot(S_cur_d,S_next_d)
-      B_vertex = sqrt(1-A_vertex**2)/(1+A_vertex)
-      d_vertex = R0*B_vertex
-  
+      temp_target = False
       print()
-      print("S:",S_cur,"S_cur_d:",S_cur_d,"d_vertex:",d_vertex)
-      while (count < 500):
+      print("S:",S,"S_d:",S_d,"d_vertex:",d_vertex)
+      while (count < 1000):
         count = count + 1
+        print(count)
         (X,r) = self.x.ray()
-        #First the termination condition for this segment
-        x_vertex = S_cur.x2 - X
-        if (mag(x_vertex) <= x_er + d_vertex or sgn(dot(S_cur.d,x_vertex)) <= 0 ):
-          plt.plot(self.x.x,self.x.y,'+r')
-          break              
-
+        x_vertex = S.x2 - X
+        if (mag(x_vertex) <= x_er + d_vertex or (has_next and sgn(dot(S.d,x_vertex)) <= 0) ):
+          break                      
+        
         #Find the intersection point
-        I = line_intersect(X,X+r,S_cur.x1,S_cur.x2)
-        X_I = I - X
-        if (isnan(I[0]) or isnan(I[1])):
-          if (dist_point_line(X,S_cur.x1,S_cur.d > x_er)):
-            print("nan I with S =",S_cur)
-            near_point = near_point_line(X,S_cur.x1,S_cur_d)
-            print("near_point:",near_point)
-            P.insert(0, (near_point[0],near_point[1]))
-            P.insert(0,(self.x.x,self.x.y))            
-            break
-          else:
-            u = (v_max,0)
+        x_proj = near_point_line(X,S.x1,S_d)
+        dist = mag(x_proj-X)
+        I = Segment(x_proj,S.x2).intersect(X,r)
+        if ((isnan(I[0]) or isnan(I[1])) and not temp_target and dist < R0/4):
+          u = (v_max,0)
         else:
-          d = mag(X_I)
-          A = dot(X_I,S_cur_d)/d
-          B = sqrt(1-A**2)/(1+A)
-          d0 = R0*B
-        
-          rxd = cross(r,S_cur_d)
+          if (isnan(I[0]) or isnan(I[1]) and not temp_target):
+            temp_target = True
+            V = X + r*R0/4
+            g = (S.x1 + x_proj)/2 - V
+            g = g / mag(g)
+            #plt.plot(x_proj[0],x_proj[1],"or")
+            #plt.plot([V[0],(V+g)[0]],[V[1],(V+g)[1]],"-r")
+          elif (not temp_target):
+            V = I
+            g = S_d
 
-          w = (B*v_max/d)
-
-          plt.plot([X[0],X[0]+S_cur_d[0]/4],[X[1],X[1]+S_cur_d[1]/4],"b-")
-          print("A: {0:.2f} B: {1:.2f} d0: {2:.2f} d: {3:.2f} rxd: {4:.2f} w: {5:.2f}".format(A,B,d0,d,rxd,w))
-        
-          u = (0,0)
-
-          if ((sgn(dot(r,S_cur_d)) > 0 and d > d0 + x_er) or (d < x_er/10)):
-            print("A")
-            plt.plot(self.x.x,self.x.y,'ob')
-            u = (v_max,0)
-          elif (w <= w_max):
-            print("B")
-            plt.plot(self.x.x,self.x.y,'og')
-            u = (v_max,w*sgn(rxd))
+          X_V = V - X
+          d = mag(X_V)
+          A = dot(X_V,g)/d
+          try:
+            B = sqrt(1-A**2)/(1+A)
+          except ValueError:
+            u = (v_max,w_max)
           else:
-            print("C")
-            plt.plot(self.x.x,self.x.y,'oy')
-            u = (w_max * d/B, w_max*sgn(rxd))
             
-          
-        print("u: {0:.2f}, {1:.2f}".format(u[0],u[1]))
+            d0 = R0*B
+            
+            rxd = cross(r,S_d)
+            w = (B*v_max/d)
+            #plt.plot([X[0],X[0]+S_d[0]/4],[X[1],X[1]+S_d[1]/4],"b-")
+            
+            u = (0,0)
+            if (sgn(dot(r,S_d)) > 0 and d > d0 + x_er):
+              dist = dist_point_line(X,S.x1,S_d)
+              u = (v_max,0)
+            elif (w <= w_max):
+              #plt.plot(self.x.x,self.x.y,'og')
+              u = (v_max,w*sgn(rxd))
+            else:
+              temp_target = False
+              #plt.plot(self.x.x,self.x.y,'oy')
+              u = (min([w_max * d/B,v_max/8]), w_max*sgn(rxd))
+              #u = (v_max,w*sgn(rxd))
+         
         self.tick(u,dt)
-        #print(self)
         self.plot()
-        
-
-
-      
-    
 
   def measure(self):
     return self.z
@@ -292,9 +288,18 @@ def makeEnviron():
     for y in range(5):
       e.obstacles.append(Rect(2*x,2*y,1,1))
   return e
-
+def makeEnviron2():
+  O = []
+  O.append(Rect(1,0,1,1))
+  O.append(Rect(0,2,1,1))
+  O.append(Rect(2,2,1,1))
+  O.append(Rect(4,0,1,3))
+  O.append(Rect(0,4,1,1))
+  O.append(Rect(2,4,3,1))
+  e = Environment(O)
+  return e
 if __name__ == "__main__":
-  env = makeEnviron()
+  env = makeEnviron2()
   #s1 = Segment(array([2,0]),array([2,1]))
   #s2 = Segment(array([0,0]),array([0,1]))
   #o = Obstacle([s1, s2])
@@ -307,12 +312,14 @@ if __name__ == "__main__":
 
   mot = Robot_Motion_Model()
   odom = Robot_Odometry_Model()
-  meas = Robot_Measurement_Model(measure_count=0,fov=pi/4)
-  start_pose = Pose(0,1.5,0)
+  meas = Robot_Measurement_Model(measure_count=8,fov=pi/8)
+  start_pose = Pose(0.5,1.5,0)
 
   r = Robot_Sim(env,mot,odom,meas,start_pose)
 
-  r.move_along([(0,1.5),(1.5,1.5),(3.5,2.5),(10,3.0),(10,10),(9,10),(9,9.5),(9.5,9.5),(9.5,5),(0,5),(0,10)],2,5,0.1)
+  #r.move_along([(5,-4),(0,1.5),(1.5,1.5),(3.5,2.5),(10,3.0),(10,10),(9,10),(9,9.5),(9.5,9.5),(9.5,5),(0,5),(0,10)],2,5,1)
+  r.move_along([(0.5,1.5),(2.5,1.5),(2.5,0.5),(3.5,0.5),(3.5,3.5),(1.5,3.5),(1.5,2.5)],2,5,0.1)
+
   """
   while (r.x.x < 0.8):
     u = (2,0.0) #forward, angular velocity
