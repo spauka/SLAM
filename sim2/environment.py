@@ -72,30 +72,31 @@ class Segment:
     return sqrt(dot(x_Xi,x_Xi))
 
   def intersect(self, x, r):
-    Xi = line_intersect(self.x1,self.x2,x,x+r)    
+    Xi = line_intersect(self.x1,self.x2,x,x+r)
+    #plt.plot(Xi[0],Xi[1],"r+")
     if (isnan(Xi[0]) or isnan(Xi[1])):
       return Xi
 
-    p_i = Xi - x
-    if (abs(r[0]) < abs(r[1])):
-      s = p_i[1]/r[1]
-    else:
-      s = p_i[0]/r[0]
+    s = line_parameter(Xi,x,r)
+    t = line_parameter(Xi,self.x1,self.d)
 
-
-    x1_i = Xi - self.x1
-    if (abs(self.d[0]) < abs(self.d[1])):
-      t = x1_i[1]/self.d[1]
-    else:
-      t = x1_i[0]/self.d[0]
+    #print("Xi:",Xi,"s:",s,"t:",t)
 
     if (s > 0 and 0 <= t and t <= 1):
-      #return the distance to the point of intersection
       return Xi
     else:
       #no valid intersection
       return array([float('nan'),float('nan')])
     
+
+def line_parameter(Xi,x,r):
+  x_Xi = Xi - x
+  if (abs(r[0]) < abs(r[1])):
+    s = x_Xi[1]/r[1]
+  else:
+    s = x_Xi[0]/r[0]
+  return s
+  
 
 """Find the intersection point of the lines X1->X2 and X3->X4"""
 def line_intersect(X1,X2,X3,X4):
