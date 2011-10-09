@@ -2,6 +2,7 @@ from robot import *
 from random import uniform
 
 class Particle:
+  w = None
   def __init__(self,env,mot,meas,x):
     self.__dict__.update(locals())
   def measure_prob(self,Z):
@@ -44,8 +45,8 @@ class Particle_Collection:
       if (w > w_max):
         w_max = w
       c_w += w
-      P_w.append((c_w,p))
       self.W.append(w)
+      P_w.append((c_w,p))
     P_new = []
     w_avg = c_w/len(self.P)
     self.w_slow = self.w_slow + self.a_slow*(w_avg-self.w_slow)
@@ -71,13 +72,12 @@ class Particle_Collection:
     #print("resampling. P = ",[str(p) for p in self.P])
     if (len(self.P) == 0):
       return Particle_Collection(self.P,self.env,self.mot,self.meas,self.w_slow,self.w_fast)
-
-    H = BinSet(self.env.B,50,50,16)
+    self.W = []
+    self.H = BinSet(self.env.B,50,50,16)
     k = 0
     M_x = float('inf')
     M = 0
 
-    self.W = []
     P_w = []
     c_w = 0
     w_max = 0
@@ -86,8 +86,9 @@ class Particle_Collection:
       if (w > w_max):
         w_max = w
       c_w += w
-      P_w.append((c_w,p))
+      p.w = w
       self.W.append(w)
+      P_w.append((c_w,p))
     P_new = []
     w_avg = c_w/len(self.P)
     self.w_slow = self.w_slow + self.a_slow*(w_avg-self.w_slow)
@@ -111,7 +112,7 @@ class Particle_Collection:
             break
       
       P_new.append(p_s)
-      if (H.isempty(p_s.x)):
+      if (self.H.isempty(p_s)):
         k = k+1
         if (k > 1):
           M_x = ((k-1)/(2*epsilon)) * (1 - 2/(9*(k-1)) + sqrt(2/(9*(k-1)))*z_delta)**3
@@ -126,14 +127,21 @@ class Particle_Collection:
     for i in range(n):
       self.P.append(self.draw_random())
   def plot(self,plt,f):
-    i = 0
-    for p in self.P:
-      if i > 500:
-        return
-      
-      if p.w > 0.05:
-        p.plot(plt,f)
-        i = i + 1
+    if not self.H is None:
+      for i in self.H.H:
+        for j in self.H.H[i]:
+          for k in self.H.H[i][j]:
+            h = self.H.H[i][j][k] 
+            if h.w() > 0.01:
+              h.plot(plt,f)
+    else:
+      i = 0
+      for p in self.P:
+        if i > 500:
+          return      
+        if p.w > 0.05:
+          p.plot(plt,f)
+          i = i + 1
 
   def draw_random(self):
     while (True):
@@ -179,11 +187,14 @@ class BinSet:
     self.nx = nx
     self.ny = ny
     self.nt = nt
+    self.dx = self.width/float(self.nx)
+    self.dy = self.height/float(self.ny)
+    self.dth = (2*pi)/float(self.nt)
     self.H = {}
-  def isempty(self,x):
-    i = min([int(self.nx*(x.x-self.x)/self.width),self.nx-1])
-    j = min([int(self.ny*(x.y-self.y)/self.height),self.ny-1])
-    k = min([int(self.nt*(x.th/(2*pi))),self.nt-1])
+  def isempty(self,p):
+    i = min([int((p.x.x-self.x)/self.dx),self.nx-1])
+    j = min([int((p.x.y-self.y)/self.dy),self.ny-1])
+    k = min([int(p.x.th/self.dth),self.nt-1])
     
     if (not i in self.H):
       h = True
@@ -195,9 +206,54 @@ class BinSet:
 
     if (not k in self.H[i][j]):
       h = True
+      #x = i*self.dx + self.x
+      #y = j*self.dy + self.y
+      #th =k*self.dth
+      self.H[i][j][k] = Bin(p)
     else:
-      h = self.H[i][j][k]
-      
-    self.H[i][j][k] = False
+      h = False
+      self.H[i][j][k].add(p)
 
     return h
+
+class Bin:
+  def __init__(self,p):
+    self.P = [p]
+    if not p.w is None:
+      self.n = 1
+      self.w_sum = p.w
+    else:
+      self.n = 0
+      self.w_sum =0
+
+  def add(self,p):
+    self.P.append(p)
+    if not p.w is None:
+      self.n = self.n+1
+      self.w_sum = self.w_sum + p.w
+      
+
+  def w(self):
+    if self.n > 0:
+      self.w_val = self.w_sum/self.n
+    else:
+      self.w_val = 0
+    return self.w_val
+
+  
+  def plot(self,plt,f):
+    x = 0
+    y = 0
+    th = 0
+    for p in self.P:
+      x = x + p.x.x
+      y = y + p.x.y
+      th = th + p.x.th
+    X = Pose(x/len(self.P),y/len(self.P),th/len(self.P))
+    if self.w_val is None:
+      self.w()
+    plt.plot(X.x,X.y,'.',color=f(self.w_val))
+    (X1,r) = X.ray()
+    #print(self.X)
+    X2 = X1 + r*0.15
+    plt.plot([X1[0],X2[0]],[X1[1],X2[1]],'-',color=f(self.w_val))

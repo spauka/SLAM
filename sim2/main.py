@@ -40,7 +40,7 @@ def makeEnviron3():
   return e
 
 def makePath3():
-  P = [(0.5,0.5),(0.5,3.5),(5.5,3.5),(5.5,0.5),(7.5,0.5),(7.5,5),(9,5),(9,6.5),(0.5,6.5),(0.5,0.5),(5.5,0.5),(5.5,6.5),(9.5,6.5),(0.5,6.5)]
+  P = [(0.5,0.5),(0.5,3.5),(5.5,3.5),(5.5,0.5),(7.5,0.5),(7.5,5),(9,5),(9,6.5),(0.5,6.5),(0.5,0.5),(5.5,0.5),(5.5,6.5)]
   return P
 def makeMotion1(v_max=5,w_max=6):
   a1=0.05 #v->vr
@@ -331,7 +331,7 @@ def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Meas
     plt.draw()
     plt.figure(1)
     plt.clf()
-    plt.hist(P_new.W)
+    plt.hist(P_new.W,bins=20)
     plt.draw()
     
   plt.ioff()

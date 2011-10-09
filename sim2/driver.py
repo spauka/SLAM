@@ -31,7 +31,7 @@ class Robot_Driver:
       self.S = Segment(array(self.P[0]),array(self.P[1]))
       self.has_next = (len(self.P) >= 3)
       self.P.pop(0) 
-      #self.S.plot(plt)
+      #self.S.plot(self.plt)
       #plt.plot([self.r.x.x-0.1,self.r.x.x+0.1],[self.r.x.y-0.1,self.r.x.y+0.1],"g")
       S_dist = mag(self.S.d)
       self.gamma = self.delta * S_dist/self.R_max
