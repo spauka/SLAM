@@ -119,7 +119,7 @@ class Pose:
     self.y = y
     self.th = th
   def __str__(self):
-    return " ".join(list(map(str,[self.x,self.y,self.th])))
+    return ",".join(list(map(str,[self.x,self.y,self.th])))
   def __repr__(self):
     return self.__str__()
 
@@ -135,13 +135,22 @@ class Pose:
     Y = self.y + d*sin(self.th)
     plt.plot([self.x,X],[self.y,Y],'-r')
     
+def plot_weighted_pose(plt,f,X,w):
+  plt.plot(X.x,X.y,'.',color=f(w))
+  (X1,r) = X.ray()
+  X2 = X1 + r*0.15
+  plt.plot([X1[0],X2[0]],[X1[1],X2[1]],'-',color=f(w))
+
+def pose_from_str(s):
+  p = [float(x) for x in s.split(',')]
+  return Pose(p[0],p[1],p[2])
 class Measurement:
   #wrapper class for all robot measurements
   laser_data = []
   def __init__(self, laser_data):
     self.laser_data = laser_data
   def __str__(self):
-    return str(self.laser_data)
+    return ','.join([str(th)+":"+str(d) for (th,d) in self.laser_data])
   def __repr__(self):
     return str(self)
 
@@ -154,6 +163,12 @@ class Measurement:
         X = x.x + d*cos(th1)
         Y = x.y + d*sin(th1)
         plt.plot([x.x,X],[x.y,Y],'-r')
+  
+def measurement_from_str(s):
+  data = s.split(',')
+  data = [d.split(':') for d in data]
+  data = [(float(d[0]),float(d[1])) for d in data]
+  return Measurement(data)
 
 class Robot_Sim:
   t = 0
@@ -188,11 +203,10 @@ class Robot_Sim:
   def __repr__(self):
     return str(self)
 
-  def plot(self,plt):
-    
+  def plot(self,plt):    
     self.Z.plot(plt,self.x)
     self.x.plot(plt)
-    plt.plot([self.prev_x.x,self.x.x],[self.prev_x.y,self.x.y],'k--')
+    #plt.plot([self.prev_x.x,self.x.x],[self.prev_x.y,self.x.y],'k--')
 
 def gaussian(mu, var, x):
   norm = 1 / sqrt(2 * pi * var)

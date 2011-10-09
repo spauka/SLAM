@@ -292,15 +292,15 @@ def test_KLD(epsilon,z_delta):
   plt.show()
 
 
-def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Measurement_Model(measure_count=4,fov=pi/2,sd_hit=0.10),KLD=True,n=200,kidnapped=False):
-  
+def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Measurement_Model(measure_count=4,fov=pi/2,sd_hit=0.10),KLD=True,n=200,kidnapped=False,filename="out.dat"):
+  f = open(filename,'w')
   start_pose = Pose(path[0][0],path[0][1],atan2(path[1][1]-path[0][1],path[1][0]-path[0][0]))
 
   r = Robot_Sim(env,mot,Robot_Odometry_Model(),meas,start_pose)
   r.tick((0,0),0.1)
   P0 = Particle_Collection([],env,mot,meas)
   if kidnapped:
-    P0.draw_n_random(n)
+    P0.draw_n_random(10000)
     P0.w_fast = 0.5
   else:
     for i in range(n):
@@ -308,6 +308,7 @@ def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Meas
 
       
   P = [P0]
+  Out = []
   plt.ion()
   i = 0
   driver = Robot_Driver(r,path,v_max = mot.v_max, w_max = mot.w_max)
@@ -316,6 +317,7 @@ def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Meas
     r.tick(u_command,driver.dt)
     Z = r.Z
     P_new = P[i].sample_mov(u_command,driver.dt)
+    #P_new.P.append(Particle(env,mot,meas,r.x)) #(Cheat mode)
     if KLD:
       P_resampled = P_new.KLD_resample(Z,0.2,1.3)
     else:
@@ -327,15 +329,45 @@ def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Meas
     plt.clf()
     env.plot(plt)
     r.plot(plt)
-    P_new.plot(plt,p_rgb)
+    save(f,r.x,r.Z,P_new.plot(plt,p_rgb))
     plt.draw()
     plt.figure(1)
     plt.clf()
     plt.hist(P_new.W,bins=20)
     plt.draw()
     
+  f.close()
   plt.ioff()
   plt.show()
+
+def save(f,x,Z,P):
+  s = ";".join([str(x),str(Z)]+[str(x) + ":" + str(w) for (x,w) in P]) + "\n"
+  print(s)
+  f.write(s)
+
+def open_data(env=makeEnviron3(),filename="out.dat"):
+  r = Robot_Sim(None,None,None,None,None)
+  f = open(filename,'r')
+  plt.ion()
+  plt.show()
+  for line in f:
+    parse = line.split(';')
+    r.x = pose_from_str(parse[0])
+    r.Z = measurement_from_str(parse[1])
+    print(r.x)
+    print(r.Z)
+    P = [part_from_str(p) for p in parse[2:]]
+    print([str(p) for p in P])
+    plt.clf()
+    env.plot(plt)
+    r.plot(plt)
+    for p in P:
+      p.plot(plt,p_rgb)
+    plt.draw()
+  f.close()
+  plt.ioff()
+  plt.show()
+    
 
 if __name__ == "__main__":
   #test_gaussian(plt)
@@ -345,6 +377,7 @@ if __name__ == "__main__":
   #mcl1()
   #testlaser1()
   #testdriver2()
-  MCL(kidnapped=False)
+  MCL(kidnapped=True,filename="kidnapped1.dat")
+  #open_data(filename="out.1.dat")
   #test_KLD(0.15,1.3)
   #test_p_rgb()

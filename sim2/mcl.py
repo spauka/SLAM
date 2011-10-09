@@ -13,14 +13,28 @@ class Particle:
     return Particle(self.env,self.mot,self.meas,x_new)
 
   def plot(self,plt,f):
-    plt.plot(self.x.x,self.x.y,'.',color=f(self.w))
-    (X1,r) = self.x.ray()
-    X2 = X1 + r*0.15
-    plt.plot([X1[0],X2[0]],[X1[1],X2[1]],'-',color=f(self.w))
+    plot_weighted_pose(plt,f,self.x,self.w)
+   #plt.plot(self.x.x,self.x.y,'.',color=f(self.w))
+   #(X1,r) = self.x.ray()
+   #X2 = X1 + r*0.15
+   #plt.plot([X1[0],X2[0]],[X1[1],X2[1]],'-',color=f(self.w))
+
   def __str__(self):
-    return str(self.x)
+    if not self.w is None:
+      return str(self.x) + ":" + str(self.w)
+    else:
+      return str(self.x) + ":0.0"
+
+def part_from_str(s):
+  parse = s.split(':')
+  x = pose_from_str(parse[0])
+  w = float(parse[1])
+  p = Particle(None,None,None,x)
+  p.w = w
+  return p
+
 class Particle_Collection:
-  def __init__(self,P,env,mot,meas,w_slow=1,w_fast=1,a_slow=0.08,a_fast=0.1,r_weight=1):
+  def __init__(self,P,env,mot,meas,w_slow=1,w_fast=1,a_slow=0.45,a_fast=0.5,r_weight=1):
     self.__dict__.update(locals())
   def add(self, p):
     P.append(p)
@@ -127,21 +141,25 @@ class Particle_Collection:
     for i in range(n):
       self.P.append(self.draw_random())
   def plot(self,plt,f):
+    out = []
     if not self.H is None:
       for i in self.H.H:
         for j in self.H.H[i]:
           for k in self.H.H[i][j]:
             h = self.H.H[i][j][k] 
-            if h.w() > 0.01:
+            if h.w() > 0.001:
               h.plot(plt,f)
+              out.append((h.X,h.w_val))
     else:
       i = 0
       for p in self.P:
         if i > 500:
           return      
-        if p.w > 0.05:
+        if p.w > 0.001:
           p.plot(plt,f)
+          out.append((p.X,p.w))
           i = i + 1
+    return out
 
   def draw_random(self):
     while (True):
@@ -150,33 +168,6 @@ class Particle_Collection:
       th = uniform(0,2*pi)
       if (not self.env.inside(x,y)):
         return Particle(self.env,self.mot,self.meas,Pose(x,y,th))
-
-class BinSetOld:
-  def __init__(self,B,nx,ny,nt):
-    self.width = B.width
-    self.height = B.height
-    self.x = B.x
-    self.y = B.y
-    self.nx = nx
-    self.ny = ny
-    self.nt = nt
-    self.H = []
-    for i in range(nx):
-      self.H.append([])
-      for j in range(ny):
-        self.H[i].append([])
-        for k in range(nt):
-          self.H[i][j].append(True)
-  def isempty(self,x):
-    i = min([int(self.nx*(x.x-self.x)/self.width),self.nx-1])
-    j = min([int(self.ny*(x.y-self.y)/self.height),self.ny-1])
-    k = min([int(self.nt*(x.th/(2*pi))),self.nt-1])
-    
-    #print(self.H)
-    #print(i,j,k)
-    h = self.H[i][j][k]
-    self.H[i][j][k] = False
-    return h
 
 class BinSet:
   def __init__(self,B,nx,ny,nt):
@@ -249,11 +240,7 @@ class Bin:
       x = x + p.x.x
       y = y + p.x.y
       th = th + p.x.th
-    X = Pose(x/len(self.P),y/len(self.P),th/len(self.P))
+    self.X = Pose(x/len(self.P),y/len(self.P),th/len(self.P))
     if self.w_val is None:
       self.w()
-    plt.plot(X.x,X.y,'.',color=f(self.w_val))
-    (X1,r) = X.ray()
-    #print(self.X)
-    X2 = X1 + r*0.15
-    plt.plot([X1[0],X2[0]],[X1[1],X2[1]],'-',color=f(self.w_val))
+    plot_weighted_pose(plt,f,self.X,self.w_val)
