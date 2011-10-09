@@ -96,7 +96,7 @@ class Particle_Collection:
     l =0
     r=0
     isrand = False
-    while (M < max([M_x,50])):
+    while (M < max([M_x,100]) and (k > 1 or M < 1000)):
       
       if (uniform(0,1) < p_rand):
         isrand = True
@@ -110,7 +110,6 @@ class Particle_Collection:
             p_s = p[1]
             break
       
-
       P_new.append(p_s)
       if (H.isempty(p_s.x)):
         k = k+1
@@ -120,8 +119,7 @@ class Particle_Collection:
         l = l+1
       M = M + 1
       #print("k:",k,"M:",M,"M_x:",M_x,"x",p_s.x)
-    print("k:",k,"l:",l,"r:",r)
-    print("M:",M,"w_avg",w_avg,"p_rand=",p_rand,"w_slow:",self.w_slow,"w_fast:",self.w_fast,"w_max:",w_max)
+    print("k:",k,"l:",l,"r:",r,"M:",M,"w_avg",w_avg,"p_rand=",p_rand,"w_slow:",self.w_slow,"w_fast:",self.w_fast,"w_max:",w_max)
     return Particle_Collection(P_new,self.env,self.mot,self.meas,self.w_slow,self.w_fast)
 
   def draw_n_random(self, n):
@@ -130,7 +128,7 @@ class Particle_Collection:
   def plot(self,plt,f):
     i = 0
     for p in self.P:
-      if i > 300:
+      if i > 500:
         return
       
       if p.w > 0.05:
