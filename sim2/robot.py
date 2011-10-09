@@ -153,7 +153,7 @@ class Measurement:
       if (not isnan(d)):
         X = x.x + d*cos(th1)
         Y = x.y + d*sin(th1)
-        plt.plot([x.x,X],[x.y,Y],'--r')
+        plt.plot([x.x,X],[x.y,Y],'-r')
 
 class Robot_Sim:
   t = 0

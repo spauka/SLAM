@@ -15,12 +15,14 @@ class Environment:
     #this could be optimised by using a BSP tree
     X = array([x,y])
     r = array([cos(th),sin(th)])
-    D = [d for O in map(lambda o: o.intersect(X,r),self.O) for d in O]
+    D = filter(lambda x: not isnan(x), map(lambda o: o.intersect(X,r),self.O))
+    #print("D:",D)
+    #D = [d for O in map(lambda o: o.intersect(X,r),self.O) for d in O]
     #print(D)
     if (len(D) == 0):
       return float('nan')
     else:
-      return min(D)
+      return sqrt(min(D))
 
   def plot(self,plt):
     for o in self.O:
@@ -46,6 +48,8 @@ class Obstacle:
       
 class Rect(Obstacle):
   def __init__(self,x,y,width,height):
+    y_max = y+height
+    x_max = x+width
     self.__dict__.update(locals())
     c = array([x,y])
     w = array([width,0])
@@ -54,13 +58,87 @@ class Rect(Obstacle):
     self.segments.append(Segment(c+w,c+w+h))
     self.segments.append(Segment(c+w+h,c+h))
     self.segments.append(Segment(c+h,c))
+  def intersect(self,x,r):
+    if (r[0] > 0): 
+      x_dist = self.x -x[0]
+      if (x_dist > 0):
+        y_dist = (x_dist)*r[1]/r[0]
+        Y =  y_dist + x[1]
+        if (Y >= self.y and Y <= self.y_max):
+          #print("1:",self.x,self.y,x_dist,y_dist,Y)
+          return x_dist**2 + y_dist**2
+    elif (r[0] < 0):
+      x_dist = self.x_max - x[0]
+      if (x_dist < 0):
+        y_dist = (x_dist)*r[1]/r[0]
+        Y =  y_dist + x[1]
+        if (Y >= self.y and Y <= self.y_max):
+          #print("2:",self.x,self.y,x_dist,y_dist,Y)
+          return x_dist**2 + y_dist**2      
+    
+    if (r[1] > 0): 
+      y_dist = self.y - x[1]
+      if (y_dist > 0):
+        x_dist = y_dist * r[0] / r[1]
+        X = x_dist + x[0]
+        if (X >= self.x and X <= self.x_max):
+          #print("3:",self.x,self.y,x_dist,y_dist,X)
+          return x_dist**2 + y_dist**2
+    elif (r[1] < 0):
+      y_dist = self.y_max - x[1]
+      if (y_dist < 0):
+        x_dist = y_dist * r[0] / r[1]
+        X = x_dist + x[0]
+        if (X >= self.x and X <= self.x_max):
+          #print("4:",self.x,self.y,x_dist,y_dist,X)
+          return x_dist**2 + y_dist**2    
+    return float('nan')
+      
   def inside(self,x,y):
-    return (x >= self.x and x <= self.x + self.width) and (y >= self.y and y <= self.y + self.height)
+    return (x >= self.x and x <= self.x_max) and (y >= self.y and y <= self.y_max)
 
 class Boundary(Rect):
   def inside(self,x,y):
     return (x <= self.x or x >= self.x + self.width) or (y <= self.y or y >= self.y + self.height)
-
+  def intersect(self,x,r):
+    #print(x,r,self.x,self.x_max,self.height,self.y,self.y_max,self.height)
+    evalx =  (abs(r[0]) > abs(r[1]))
+    evaly = not evalx
+    
+    if (r[0] > 0): 
+      x_dist = self.x_max -x[0]
+      if (x_dist > 0):
+        y_dist = (x_dist)*r[1]/r[0]
+        Y =  y_dist + x[1]
+        #print("1:",self.x,self.y,x_dist,y_dist,Y)
+        if (Y >= self.y and Y <= self.y_max):
+          return x_dist**2 + y_dist**2
+    elif (r[0] < 0):
+      x_dist = self.x - x[0]
+      if (x_dist < 0):
+        y_dist = (x_dist)*r[1]/(r[0])
+        Y =  y_dist + x[1]
+        #print("2:",self.x,self.y,x_dist,y_dist,Y)
+        if (Y >= self.y and Y <= self.y_max):
+          return x_dist**2 + y_dist**2      
+    
+    if (r[1] > 0): 
+      y_dist = self.y_max - x[1]
+      if (y_dist > 0):
+        x_dist = y_dist * r[0] / r[1]
+        X = x_dist + x[0]
+        #print("3:",self.x,self.y,x_dist,y_dist,X)
+        if (X >= self.x and X <= self.x_max):
+          return x_dist**2 + y_dist**2
+    elif (r[1] < 0):
+      y_dist = self.y - x[1]
+      if (y_dist < 0):
+        x_dist = y_dist * r[0] / r[1]
+        X = x_dist + x[0]
+        #print("4:",self.x,self.y,x_dist,y_dist,X)
+        if (X >= self.x and X <= self.x_max):
+          return x_dist**2 + y_dist**2    
+    return float('nan') 
 class Segment:
   x1 = array([0,0])
   x2 = array([0,0])
@@ -110,7 +188,6 @@ def line_parameter(Xi,x,r):
     s = x_Xi[0]/r[0]
   return s
   
-
 """Find the intersection point of the lines X1->X2 and X3->X4"""
 def line_intersect(X1,X2,X3,X4):
   x1 = X1[0]

@@ -187,4 +187,3 @@ class BinSet:
     self.H[i][j][k] = False
 
     return h
-
