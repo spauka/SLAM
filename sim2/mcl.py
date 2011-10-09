@@ -19,7 +19,7 @@ class Particle:
   def __str__(self):
     return str(self.x)
 class Particle_Collection:
-  def __init__(self,P,env,mot,meas,w_slow=1,w_fast=1,a_slow=0.025,a_fast=0.05,r_weight=1):
+  def __init__(self,P,env,mot,meas,w_slow=1,w_fast=1,a_slow=0.08,a_fast=0.1,r_weight=1):
     self.__dict__.update(locals())
   def add(self, p):
     P.append(p)
@@ -93,33 +93,49 @@ class Particle_Collection:
     self.w_slow = self.w_slow + self.a_slow*(w_avg-self.w_slow)
     self.w_fast = self.w_fast + self.a_fast*(w_avg-self.w_fast)
     p_rand = max([0.0,self.r_weight*(1 - self.w_fast/self.w_slow)])
-    while (M < min([M_x,1000])):
+    l =0
+    r=0
+    isrand = False
+    while (M < max([M_x,50])):
       
       if (uniform(0,1) < p_rand):
-       p_s=self.draw_random()
+        isrand = True
+        p_s=self.draw_random()
+        r = r+1
       else:
+        isrand = False
         x = uniform(0,c_w)
         for p in P_w:
           if (p[0] >= x):
             p_s = p[1]
             break
       
+
       P_new.append(p_s)
-      if H.isempty(p_s.x):
+      if (H.isempty(p_s.x)):
         k = k+1
         if (k > 1):
           M_x = ((k-1)/(2*epsilon)) * (1 - 2/(9*(k-1)) + sqrt(2/(9*(k-1)))*z_delta)**3
+      else:
+        l = l+1
       M = M + 1
-      print("k:",k,"M:",M,"M_x:",M_x,"x",p_s.x)
-    #print("w_avg",w_avg,"p_rand=",p_rand,"w_slow:",self.w_slow,"w_fast:",self.w_fast,"w_max:",w_max)
+      #print("k:",k,"M:",M,"M_x:",M_x,"x",p_s.x)
+    print("k:",k,"l:",l,"r:",r)
+    print("M:",M,"w_avg",w_avg,"p_rand=",p_rand,"w_slow:",self.w_slow,"w_fast:",self.w_fast,"w_max:",w_max)
     return Particle_Collection(P_new,self.env,self.mot,self.meas,self.w_slow,self.w_fast)
 
   def draw_n_random(self, n):
     for i in range(n):
       self.P.append(self.draw_random())
   def plot(self,plt,f):
+    i = 0
     for p in self.P:
-      p.plot(plt,f)
+      if i > 300:
+        return
+      
+      if p.w > 0.05:
+        p.plot(plt,f)
+        i = i + 1
 
   def draw_random(self):
     while (True):

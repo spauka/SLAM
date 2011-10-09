@@ -4,7 +4,7 @@ from robot import *
 from mcl import *
 #Plotting requires matplotlib.
 import matplotlib
-matplotlib.use('GTK') #Feel free to change the backend
+matplotlib.use('GTKAgg') #Feel free to change the backend
 #['ps', 'Qt4Agg', 'GTK', 'GTKAgg', 'svg', 'agg', 'cairo', 'MacOSX', 'GTKCairo', 'WXAgg', 'TkAgg', 'QtAgg', 'FltkAgg', 'pdf', 'CocoaAgg', 'emf', 'gdk', 'template', 'WX']
 import matplotlib.pyplot as plt
 from math import pi
@@ -40,7 +40,7 @@ def makeEnviron3():
   return e
 
 def makePath3():
-  P = [(0.5,0.5),(0.5,3.5),(5.5,3.5),(5.5,0.5),(7.5,0.5),(7.5,5),(9,5)]
+  P = [(0.5,0.5),(0.5,3.5),(5.5,3.5),(5.5,0.5),(7.5,0.5),(7.5,5),(9,5),(9,6.5),(0.5,6.5),(0.5,0.5),(5.5,0.5),(5.5,6.5),(9.5,6.5),(0.5,6.5)]
   return P
 def makeMotion1(v_max=5,w_max=6):
   a1=0.05 #v->vr
@@ -221,12 +221,24 @@ def test_random_particle():
   plt.ioff()
 def p_rgb(p):
   p_inv = 1.0-p
-  g = min([p,1.0]) * 255
-  r = min([p_inv*255,1.0]) * 255
-  b = p_inv * 255 
+  g = max([1 - p/0.1,0.0]) * 255
+  if (p < 0.1):
+    b = (1-(0.1-p)/0.1) * 255
+  else:
+    b = max([0,1 - (p-0.1)/0.7]) * 255
+  r = p * 255 
   #print("r",r,"g",g,"b",b)
   return "#%.2X%.2X%.2X" % (r,g,b)
-
+def test_p_rgb():
+  P = [x/300.0 for x in list(range(0,300))]
+  plt.ion()
+  plt.show()
+  for p in P:
+    col = p_rgb(p)
+    plt.plot([p,p],[0,1],"-",color=col)
+    plt.draw()
+  plt.ioff()
+  plt.show()
 def test_measurement_prob():
   env = makeEnviron2()
   env.plot(plt)
@@ -270,8 +282,17 @@ def test_measurement_prob_2():
   plt.ioff()
   plt.show()
 
+def test_KLD(epsilon,z_delta):
+  k = list(range(2,10000))
+  M = map(lambda k: ((k-1)/(2*epsilon)) * (1 - 2/(9*(k-1)) + sqrt(2/(9*(k-1)))*z_delta)**3, k)
+  plt.ion()
+  plt.plot(k,M,'-k')
+  plt.plot(k,k,'-b')
+  plt.ioff()
+  plt.show()
 
-def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Measurement_Model(measure_count=3,fov=pi/2,sd_hit=0.15),KLD=True,n=200,kidnapped=False):
+
+def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Measurement_Model(measure_count=4,fov=pi/2,sd_hit=0.10),KLD=True,n=200,kidnapped=False):
   
   start_pose = Pose(path[0][0],path[0][1],atan2(path[1][1]-path[0][1],path[1][0]-path[0][0]))
 
@@ -280,10 +301,12 @@ def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Meas
   P0 = Particle_Collection([],env,mot,meas)
   if kidnapped:
     P0.draw_n_random(n)
+    P0.w_fast = 0.5
   else:
     for i in range(n):
       P0.P.append(Particle(env,mot,meas,start_pose))
 
+      
   P = [P0]
   plt.ion()
   i = 0
@@ -294,7 +317,7 @@ def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Meas
     Z = r.Z
     P_new = P[i].sample_mov(u_command,driver.dt)
     if KLD:
-      P_resampled = P_new.KLD_resample(Z,0.10,1.50)
+      P_resampled = P_new.KLD_resample(Z,0.2,1.3)
     else:
       P_resampled = P_new.resample(Z)
     P.append(P_resampled)
@@ -303,8 +326,8 @@ def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Meas
     plt.figure(0)
     plt.clf()
     env.plot(plt)
-    P_new.plot(plt,p_rgb)
     r.plot(plt)
+    P_new.plot(plt,p_rgb)
     plt.draw()
     plt.figure(1)
     plt.clf()
@@ -322,4 +345,6 @@ if __name__ == "__main__":
   #mcl1()
   #testlaser1()
   #testdriver2()
-  MCL()
+  MCL(kidnapped=False)
+  #test_KLD(0.15,1.3)
+  #test_p_rgb()
