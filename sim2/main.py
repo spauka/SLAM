@@ -356,19 +356,25 @@ def open_data(env=makeEnviron3(),filename="out.dat"):
   plt.ion()
   plt.show()
   for line in f:
-    parse = line.split(';')
-    r.x = pose_from_str(parse[0])
-    r.Z = measurement_from_str(parse[1])
+    if len(line) < 2:
+      break
+    try:
+      parse = line.split(';')
+      r.x = pose_from_str(parse[0])
+      r.Z = measurement_from_str(parse[1])
     #print(r.x)
     #print(r.Z)
-    P = [part_from_str(p) for p in parse[2:]]
-    #print([str(p) for p in P])
+      P = [part_from_str(p) for p in parse[2:]]
+    except:
+      break
+#print([str(p) for p in P])
     plt.clf()
     env.plot(plt)
     r.plot(plt)
     for p in P:
       p.plot(plt,p_rgb)
     plt.draw()
+
   f.close()
   plt.ioff()
   plt.show()
