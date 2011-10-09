@@ -19,7 +19,7 @@ class Particle:
   def __str__(self):
     return str(self.x)
 class Particle_Collection:
-  def __init__(self,P,env,mot,meas,w_slow=1,w_fast=1,a_slow=0.025,a_fast=0.1):
+  def __init__(self,P,env,mot,meas,w_slow=1,w_fast=1,a_slow=0.025,a_fast=0.05,r_weight=1):
     self.__dict__.update(locals())
   def add(self, p):
     P.append(p)
@@ -50,7 +50,7 @@ class Particle_Collection:
     w_avg = c_w/len(self.P)
     self.w_slow = self.w_slow + self.a_slow*(w_avg-self.w_slow)
     self.w_fast = self.w_fast + self.a_fast*(w_avg-self.w_fast)
-    p_rand = max([0.0,0.25*(1 - self.w_fast/self.w_slow)])
+    p_rand = max([0.0,self.r_weight*(1 - self.w_fast/self.w_slow)])
     #quit()
     d_samp = {}
     for i in range(len(self.P)):
@@ -72,7 +72,7 @@ class Particle_Collection:
     if (len(self.P) == 0):
       return Particle_Collection(self.P,self.env,self.mot,self.meas,self.w_slow,self.w_fast)
 
-    H = BinSet(self.env.B,10,10,8)
+    H = BinSet(self.env.B,50,50,16)
     k = 0
     M_x = float('inf')
     M = 0
@@ -92,8 +92,8 @@ class Particle_Collection:
     w_avg = c_w/len(self.P)
     self.w_slow = self.w_slow + self.a_slow*(w_avg-self.w_slow)
     self.w_fast = self.w_fast + self.a_fast*(w_avg-self.w_fast)
-    p_rand = max([0.0,0.25*(1 - self.w_fast/self.w_slow)])
-    while (M < M_x):
+    p_rand = max([0.0,self.r_weight*(1 - self.w_fast/self.w_slow)])
+    while (M < min([M_x,1000])):
       
       if (uniform(0,1) < p_rand):
        p_s=self.draw_random()
@@ -129,7 +129,7 @@ class Particle_Collection:
       if (not self.env.inside(x,y)):
         return Particle(self.env,self.mot,self.meas,Pose(x,y,th))
 
-class BinSet:
+class BinSetOld:
   def __init__(self,B,nx,ny,nt):
     self.width = B.width
     self.height = B.height
@@ -154,5 +154,37 @@ class BinSet:
     #print(i,j,k)
     h = self.H[i][j][k]
     self.H[i][j][k] = False
+    return h
+
+class BinSet:
+  def __init__(self,B,nx,ny,nt):
+    self.width = B.width
+    self.height = B.height
+    self.x = B.x
+    self.y = B.y
+    self.nx = nx
+    self.ny = ny
+    self.nt = nt
+    self.H = {}
+  def isempty(self,x):
+    i = min([int(self.nx*(x.x-self.x)/self.width),self.nx-1])
+    j = min([int(self.ny*(x.y-self.y)/self.height),self.ny-1])
+    k = min([int(self.nt*(x.th/(2*pi))),self.nt-1])
+    
+    if (not i in self.H):
+      h = True
+      self.H[i] = {}
+
+    if (not j in self.H[i]):
+      h = True
+      self.H[i][j] = {}
+
+    if (not k in self.H[i][j]):
+      h = True
+    else:
+      h = self.H[i][j][k]
+      
+    self.H[i][j][k] = False
+
     return h
 

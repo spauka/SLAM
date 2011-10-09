@@ -216,7 +216,8 @@ def mcl1():
     r.tick(u_command,driver.dt)
     Z = r.Z
     P_new = P[i].sample_mov(u_command,driver.dt)
-    P_resampled = P_new.KLD_resample(Z,0.15,1.35)
+    P_resampled = P_new.KLD_resample(Z,0.13,1.6)
+    #P_resampled = P_new.resample(Z)
     P.append(P_resampled)
     i = i + 1
 
@@ -345,8 +346,8 @@ def test_random_particle():
 def p_rgb(p):
   p_inv = 1.0-p
   g = min([p,1.0]) * 255
-  b = min([p_inv*255,1.0]) * 255
-  r = p_inv * 255 
+  r = min([p_inv*255,1.0]) * 255
+  b = p_inv * 255 
   #print("r",r,"g",g,"b",b)
   return "#%.2X%.2X%.2X" % (r,g,b)
 

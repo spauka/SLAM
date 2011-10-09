@@ -190,7 +190,7 @@ class Robot_Sim:
 
   def plot(self,plt):
     
-    #self.Z.plot(plt,self.x)
+    self.Z.plot(plt,self.x)
     self.x.plot(plt)
     plt.plot([self.prev_x.x,self.x.x],[self.prev_x.y,self.x.y],'k--')
 
