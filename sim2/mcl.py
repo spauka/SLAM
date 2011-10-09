@@ -1,5 +1,6 @@
 from robot import *
 from random import uniform
+from heapq import *
 
 class Particle:
   w = None
@@ -34,7 +35,7 @@ def part_from_str(s):
   return p
 
 class Particle_Collection:
-  def __init__(self,P,env,mot,meas,w_slow=1,w_fast=1,a_slow=0.45,a_fast=0.5,r_weight=1):
+  def __init__(self,P,env,mot,meas,w_slow=1,w_fast=1,a_slow=0.15,a_fast=0.19,r_weight=1):
     self.__dict__.update(locals())
   def add(self, p):
     P.append(p)
@@ -94,11 +95,11 @@ class Particle_Collection:
 
     P_w = []
     c_w = 0
-    w_max = 0
+    self.w_max = 0
     for p in self.P:
       w = p.measure_prob(Z)
-      if (w > w_max):
-        w_max = w
+      if (w > self.w_max):
+        self.w_max = w
       c_w += w
       p.w = w
       self.W.append(w)
@@ -134,7 +135,7 @@ class Particle_Collection:
         l = l+1
       M = M + 1
       #print("k:",k,"M:",M,"M_x:",M_x,"x",p_s.x)
-    print("k:",k,"l:",l,"r:",r,"M:",M,"w_avg",w_avg,"p_rand=",p_rand,"w_slow:",self.w_slow,"w_fast:",self.w_fast,"w_max:",w_max)
+    print("k:",k,"l:",l,"r:",r,"M:",M,"w_avg",w_avg,"p_rand=",p_rand,"w_slow:",self.w_slow,"w_fast:",self.w_fast,"self.w_max:",self.w_max)
     return Particle_Collection(P_new,self.env,self.mot,self.meas,self.w_slow,self.w_fast)
 
   def draw_n_random(self, n):
@@ -143,19 +144,33 @@ class Particle_Collection:
   def plot(self,plt,f):
     out = []
     if not self.H is None:
+      #H_sorted = []
+      #n = 0
+      w_thr = self.w_max/50
       for i in self.H.H:
         for j in self.H.H[i]:
           for k in self.H.H[i][j]:
             h = self.H.H[i][j][k] 
-            if h.w() > 0.001:
+            if h.w() > w_thr:
               h.plot(plt,f)
               out.append((h.X,h.w_val))
+           #w = h.w()
+           #if (n < 1000):
+           #  n = n+1
+           #  heappush(H_sorted,(w,h))
+           #elif (w > H_sorted[0][0]):
+           #  n = n+1
+           #  heappush(H_sorted,(w,h))
+           #  heappop(H_sorted)
+     #for (w,h) in H_sorted:
+     #  h.plot(plt,f)
+     #  out.append((h.X,h.w_val))
     else:
       i = 0
       for p in self.P:
         if i > 500:
           return      
-        if p.w > 0.001:
+        if p.w > 0.00001:
           p.plot(plt,f)
           out.append((p.X,p.w))
           i = i + 1
@@ -223,7 +238,6 @@ class Bin:
       self.n = self.n+1
       self.w_sum = self.w_sum + p.w
       
-
   def w(self):
     if self.n > 0:
       self.w_val = self.w_sum/self.n

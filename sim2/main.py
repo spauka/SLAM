@@ -1,9 +1,12 @@
+#!/usr/bin/python2
+
 from environment import *
 from driver import *
 from robot import *
 from mcl import *
 #Plotting requires matplotlib.
 import matplotlib
+import sys
 matplotlib.use('GTKAgg') #Feel free to change the backend
 #['ps', 'Qt4Agg', 'GTK', 'GTKAgg', 'svg', 'agg', 'cairo', 'MacOSX', 'GTKCairo', 'WXAgg', 'TkAgg', 'QtAgg', 'FltkAgg', 'pdf', 'CocoaAgg', 'emf', 'gdk', 'template', 'WX']
 import matplotlib.pyplot as plt
@@ -292,22 +295,23 @@ def test_KLD(epsilon,z_delta):
   plt.show()
 
 
-def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Measurement_Model(measure_count=4,fov=pi/2,sd_hit=0.10),KLD=True,n=200,kidnapped=False,filename="out.dat"):
+def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Measurement_Model(measure_count=5,fov=pi/2,sd_hit=0.02),part_meas=Robot_Measurement_Model(measure_count=5,fov=pi/2,sd_hit=0.4),KLD=True,n=200,kidnapped=False,filename="out.dat",delta=0.15,quant=1.7):
   f = open(filename,'w')
   start_pose = Pose(path[0][0],path[0][1],atan2(path[1][1]-path[0][1],path[1][0]-path[0][0]))
 
   r = Robot_Sim(env,mot,Robot_Odometry_Model(),meas,start_pose)
   r.tick((0,0),0.1)
-  P0 = Particle_Collection([],env,mot,meas)
+  P0 = Particle_Collection([],env,mot,part_meas)
   if kidnapped:
     P0.draw_n_random(10000)
     P0.w_fast = 0.5
   else:
     for i in range(n):
-      P0.P.append(Particle(env,mot,meas,start_pose))
+      P0.P.append(Particle(env,mot,part_meas,start_pose))
 
       
-  P = [P0]
+  #P = [P0]
+  P_prev = P0
   Out = []
   plt.ion()
   i = 0
@@ -316,13 +320,14 @@ def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Meas
     u_command = driver.next_control()
     r.tick(u_command,driver.dt)
     Z = r.Z
-    P_new = P[i].sample_mov(u_command,driver.dt)
+    P_new = P_prev.sample_mov(u_command,driver.dt)
     #P_new.P.append(Particle(env,mot,meas,r.x)) #(Cheat mode)
     if KLD:
-      P_resampled = P_new.KLD_resample(Z,0.2,1.3)
+      P_resampled = P_new.KLD_resample(Z,delta,quant)
     else:
       P_resampled = P_new.resample(Z)
-    P.append(P_resampled)
+    #P.append(P_resampled)
+    P_prev = P_new
     i = i+1
 
     plt.figure(0)
@@ -342,7 +347,7 @@ def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Meas
 
 def save(f,x,Z,P):
   s = ";".join([str(x),str(Z)]+[str(x) + ":" + str(w) for (x,w) in P]) + "\n"
-  print(s)
+  #print(s)
   f.write(s)
 
 def open_data(env=makeEnviron3(),filename="out.dat"):
@@ -354,10 +359,10 @@ def open_data(env=makeEnviron3(),filename="out.dat"):
     parse = line.split(';')
     r.x = pose_from_str(parse[0])
     r.Z = measurement_from_str(parse[1])
-    print(r.x)
-    print(r.Z)
+    #print(r.x)
+    #print(r.Z)
     P = [part_from_str(p) for p in parse[2:]]
-    print([str(p) for p in P])
+    #print([str(p) for p in P])
     plt.clf()
     env.plot(plt)
     r.plot(plt)
@@ -368,8 +373,34 @@ def open_data(env=makeEnviron3(),filename="out.dat"):
   plt.ioff()
   plt.show()
     
-
+def usage():
+  s =     "Usage:\n"
+  s = s + "  mcl [filename]\n"
+  s = s + "  kidnapped [filename]\n"
+  s = s + "  open [filename]\n"
+  print s
+                
 if __name__ == "__main__":
+  if (len(sys.argv) == 1):
+    usage()
+    exit()
+  if (sys.argv[1] == "mcl"):
+    if (len(sys.argv) >= 3):
+      MCL(filename=sys.argv[2])
+    else:
+      usage()
+  elif (sys.argv[1] == "kidnapped"):
+    if (len(sys.argv) >= 3):
+      MCL(filename=sys.argv[2],kidnapped=True)
+    else:
+      usage()   
+  elif (sys.argv[1] == "open"):
+    if (len(sys.argv) >= 3):
+      open_data(filename=sys.argv[2])
+    else:
+      usage()   
+  
+
   #test_gaussian(plt)
   #test_random_particle()
   #test_measurement_prob_2()
@@ -377,7 +408,8 @@ if __name__ == "__main__":
   #mcl1()
   #testlaser1()
   #testdriver2()
-  #MCL(kidnapped=True,filename="kidnapped1.dat")
-  open_data(filename="kidnapped1.dat")
+  #MCL(kidnapped=True,filename="kidnapped7.dat")
+  #open_data(filename="kidnapped6.dat")
   #test_KLD(0.15,1.3)
   #test_p_rgb()
+
