@@ -1,17 +1,21 @@
 from numpy import array, dot
 from functools import *
 from math import isnan, sqrt, pi, exp, sin, cos
+from random import uniform
 from itertools import chain
+#from robot import Pose
+
+
 
 class Environment:
-  obstacles = []
-  def __init__(self, obstacles):
-    self.obstacles = obstacles
+  O = []
+  def __init__(self, B, O):
+    self.__dict__.update(locals())
   def intersect(self, x, y, th):
     #this could be optimised by using a BSP tree
     X = array([x,y])
     r = array([cos(th),sin(th)])
-    D = [d for O in map(lambda o: o.intersect(X,r),self.obstacles) for d in O]
+    D = [d for O in map(lambda o: o.intersect(X,r),self.O) for d in O]
     #print(D)
     if (len(D) == 0):
       return float('nan')
@@ -19,9 +23,15 @@ class Environment:
       return min(D)
 
   def plot(self,plt):
-    for o in self.obstacles:
+    for o in self.O:
       o.plot(plt)
-   
+  def inside(self,x,y):
+    for O in self.O:
+      if O.inside(x,y):
+        return True
+    return False
+      
+
 class Obstacle:
   segments = []
   def __init__(self,segments):
@@ -36,6 +46,7 @@ class Obstacle:
       
 class Rect(Obstacle):
   def __init__(self,x,y,width,height):
+    self.__dict__.update(locals())
     c = array([x,y])
     w = array([width,0])
     h = array([0,height])
@@ -43,6 +54,12 @@ class Rect(Obstacle):
     self.segments.append(Segment(c+w,c+w+h))
     self.segments.append(Segment(c+w+h,c+h))
     self.segments.append(Segment(c+h,c))
+  def inside(self,x,y):
+    return (x >= self.x and x <= self.x + self.width) and (y >= self.y and y <= self.y + self.height)
+
+class Boundary(Rect):
+  def inside(self,x,y):
+    return (x <= self.x or x >= self.x + self.width) or (y <= self.y or y >= self.y + self.height)
 
 class Segment:
   x1 = array([0,0])
@@ -53,7 +70,7 @@ class Segment:
     assert(not all(x1 == x2))
     self.x1 = x1
     self.x2 = x2
-    self.d = x2 - x1
+    self.d = self.x2 - self.x1
 
   def __str__(self):
     return " ".join(list(map(str,[self.x1,self.x2])))
@@ -139,3 +156,4 @@ if __name__ == "__main__":
   print(x.intersect(p1,r1))
   print(x.intersect(p2,r2))
   print(x.intersect(p3,r3))
+

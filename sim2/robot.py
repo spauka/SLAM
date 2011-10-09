@@ -3,15 +3,10 @@ from environment import *
 from driver import *
 from random import gauss
 from math import sin, cos, atan2, pi, isnan
-
 class Robot_Measurement_Model:
-  measure_count = 0
-  fov = 0
-  sd_hit = 0
-  def __init__(self, measure_count=4,fov=0.5, sd_hit=0.0):
-    self.measure_count = measure_count
-    self.fov = fov
-    self.sd_hit = sd_hit
+  p_hit = 0.9
+  def __init__(self, measure_count=4,fov=0.5, sd_hit=0.05, z_max = 10):
+    self.__dict__.update(locals())
 
   def sample_measurement(self, env, x):
     Z = []
@@ -24,20 +19,41 @@ class Robot_Measurement_Model:
       th0 = -self.fov/2
       for i in range(self.measure_count):
         d = env.intersect(x.x,x.y,x.th+th0+i*dth)
-        d_r = gauss(d,self.sd_hit)
+        if (isnan(d)):
+          d = self.z_max
+        d_r = min([self.z_max,gauss(d,self.sd_hit)])
         Z.append((th0+i*dth,d_r))
+        
     return Measurement(Z)
     
   def measure_prob(self, env, x, Z):
+    if (env.inside(x.x,x.y)):
+      return 0.0
     q = 1
+    #print("Z:",Z.laser_data)
     for z in Z.laser_data:
       (th,d_z) = z
       d = env.intersect(x.x,x.y,x.th+th)
+      #print("th:",th,"d_z:",d_z,"d:",d)
       #p = the p
-      p = gaussian(d,sd_hit**2,d_z)
+      if (not isnan(d)):
+        p = self.p_hit * gaussian_norm(d,self.sd_hit**2,d_z)
+      else:
+        p = 1 -self.p_hit
       q = q*p
+      #print("p:",p,"q:",q)
+    assert(q <= 1.0)
     return q
-      
+
+def test_gaussian(plt,mu = 1, var = 1):
+  n = 1000.0
+  for i in range(1000):
+    x = 4 * sqrt(var) * (i - n/2)/n + mu
+    p = gaussian(mu,var,x)
+    plt.plot(x,p,'.k')
+  plt.ioff()
+  plt.show()
+
 class Robot_Motion_Model:
   #Probabilistic Robotics p124
   a1 = 0
@@ -47,9 +63,7 @@ class Robot_Motion_Model:
   a5 = 0
   a6 = 0
   def __init__(self, a1=0, a2=0, a3=0, a4=0, a5=0, a6=0, v_max=0,w_max=0):
-    print(locals())
     self.__dict__.update(locals())
-    print(self.__dict__)
   def sample_motion(self, u, x, dt):
     (v, w) = u
     vr = gauss(v, self.a1*abs(v) + self.a2*(self.v_max/self.w_max)*abs(w))
@@ -61,7 +75,7 @@ class Robot_Motion_Model:
     else:
       x_new = x.x + (vr/wr)*( sin(x.th + wr*dt) - sin(x.th))
       y_new = x.y + (vr/wr)*( cos(x.th) - cos(x.th + wr*dt))
-    print("wr:",wr,"x.th + wr*dt:",x.th + wr*dt,"sin1:",sin(x.th + wr*dt),"sin2:",sin(x.th),"dsin:", sin(x.th + wr*dt) - sin(x.th))
+    #print("wr:",wr,"x.th + wr*dt:",x.th + wr*dt,"sin1:",sin(x.th + wr*dt),"sin2:",sin(x.th),"dsin:", sin(x.th + wr*dt) - sin(x.th))
     #print("wr:",wr,"vr:",vr,"x:",x.x,"x_new:",x_new,"y:",x.y,"y_new:",y_new)
     th_new = x.th + wr*dt + gr*dt
     return Pose(x_new,y_new,th_new)
@@ -115,11 +129,11 @@ class Pose:
     return (X,r)
 
   def plot(self,plt):
-    plt.plot(self.x,self.y,'ok')
+    plt.plot(self.x,self.y,'or')
     d = 0.1
     X = self.x + d*cos(self.th)
     Y = self.y + d*sin(self.th)
-    plt.plot([self.x,X],[self.y,Y],'-k')
+    plt.plot([self.x,X],[self.y,Y],'-r')
     
 class Measurement:
   #wrapper class for all robot measurements
@@ -142,23 +156,11 @@ class Measurement:
         plt.plot([x.x,X],[x.y,Y],'--r')
 
 class Robot_Sim:
-  prev_x = Pose(0,0,0)
-  x = Pose(0,0,0)
   t = 0
-  env = Environment
-  mot = Robot_Motion_Model
-  odom = Robot_Odometry_Model
-  meas = Robot_Measurement_Model
-  
-  z = Measurement
-  u = Pose
   def __init__(self, env, mot, odom, meas, start_pose):
-    self.x = start_pose
-    self.prev_x = start_pose
-    self.env = env
-    self.mot = mot
-    self.odom = odom
-    self.meas = meas
+    x = start_pose
+    prev_x = start_pose
+    self.__dict__.update(locals())
 
   #movement command is tuple of velocity v and angular velocity w
   def tick(self, u, dt):
@@ -166,11 +168,11 @@ class Robot_Sim:
     self.x = self.mot.sample_motion(u, self.x, dt)
     self.t = self.t + dt
     self.u = self.odom.sample_motion((self.prev_x,self.x),self.prev_x)
-    self.z = self.meas.sample_measurement(self.env, self.x)
-    return (self.t,self.u,self.z)
+    self.Z = self.meas.sample_measurement(self.env, self.x)
+    return (self.t,self.u,self.Z)
 
   def measure(self):
-    return self.z
+    return self.Z
 
   def measure_odom(self):
     return self.u
@@ -188,10 +190,14 @@ class Robot_Sim:
 
   def plot(self,plt):
     
-    self.z.plot(self.x,plt)
+    #self.Z.plot(plt,self.x)
     self.x.plot(plt)
     plt.plot([self.prev_x.x,self.x.x],[self.prev_x.y,self.x.y],'k--')
 
 def gaussian(mu, var, x):
   norm = 1 / sqrt(2 * pi * var)
-  return norm * exp(- ((x-mu)**2) / (2*var))
+  res =  norm * exp(- ( (x-mu)**2) / (2*var))
+  return res
+
+def gaussian_norm(mu, var, x):
+  return exp(- ( (x-mu)**2) / (2*var))

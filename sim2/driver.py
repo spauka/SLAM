@@ -1,7 +1,6 @@
 from robot import *
-from environment import *
-
-
+#from environment import *
+import environment
 
 def sgn(x):
   return -1.0 if (x < 0) else 1.0
@@ -13,7 +12,9 @@ def mag(x):
    If the robot seems to be going all over the place or is moving too slowly, w_max is probably too small.
 """
 class Robot_Driver:
-  def __init__(self,r, P=[],v_max = 1, w_max = 5, dt=0.1, beta=0.1, delta=0.0625):
+  def __init__(self,r, P=[],v_max = 1.0, w_max = 5.0, dt=0.1, beta=0.1, delta=0.0625):
+    v_max = float(v_max)
+    w_max = float(w_max)
     R_max = v_max/w_max
     x_er = v_max*dt/2
     count = 0
@@ -24,18 +25,18 @@ class Robot_Driver:
     self.load_next_segment()
 
   def load_next_segment(self):
+    #print(self.__dict__)
     if (len(self.P) >= 2):
       self.finished = False
       self.S = Segment(array(self.P[0]),array(self.P[1]))
       self.has_next = (len(self.P) >= 3)
       self.P.pop(0) 
-      self.S.plot()
+      #self.S.plot(plt)
       #plt.plot([self.r.x.x-0.1,self.r.x.x+0.1],[self.r.x.y-0.1,self.r.x.y+0.1],"g")
       S_dist = mag(self.S.d)
       self.gamma = self.delta * S_dist/self.R_max
       self.v0 = min([1,4 * self.gamma]) * self.v_max
       self.R0 = self.v0/self.w_max
-      print("gamma:",self.gamma,"R_max:",self.R_max,"R0:",self.R0,"v0:",self.v0,"vmax:",self.v_max)
       self.alpha = self.beta
       self.S_d = self.S.d/S_dist
       if self.has_next:
@@ -80,8 +81,8 @@ class Robot_Driver:
           self.g = (self.S.x2 + x_proj)/2 - self.V
           self.g = self.g / mag(self.g)
           #print("temp_target V:",self.V,"g:",self.g)
-          plt.plot([X[0],self.V[0]],[X[1],self.V[1]],"b-")
-          plt.plot([self.V[0],((self.S.x2 + x_proj)/2)[0]],[self.V[1],((self.S.x2 + x_proj)/2)[1]],"r-")
+          #plt.plot([X[0],self.V[0]],[X[1],self.V[1]],"b-")
+          #plt.plot([self.V[0],((self.S.x2 + x_proj)/2)[0]],[self.V[1],((self.S.x2 + x_proj)/2)[1]],"r-")
       elif (Inan):
         return (self.v0,0)
       else:
@@ -97,14 +98,14 @@ class Robot_Driver:
       try:
         B = sqrt(1-A**2)/(1+A)
       except ValueError:
-        print("X:",X,"r:",r)
+        #print("X:",X,"r:",r)
         return (self.v0,self.w_max)
 
       d0 = self.R0*B
       rxd = cross(r,self.g)
       
       if (mag(I-X) < self.x_er and dot(r,self.S_d) > 0.995):
-        print("r:",r,"S_d:",self.S_d)
+        #print("r:",r,"S_d:",self.S_d)
         #plt.plot(X[0],X[1],"bo")
         w_proposed = 0  
       elif (not self.temp_target or dist < self.R0/4):
@@ -124,6 +125,6 @@ class Robot_Driver:
         v = max([self.w_max * d/B,self.v0 * self.alpha])
         w = self.w_max*sgn(rxd)
       self.alpha = self.beta*self.gamma + (1 - self.beta) * self.alpha + self.beta * (1 - self.gamma) * (1 - v/self.v0)
-      print("X:",X,"v:",v,"v/v0 : ", v/self.v0,"w:",w,"alpha:",self.alpha, "d/B:",d/B, "w_proposed:",w_proposed,"d:",d,"d0:",d0)
+      #print("X:",X,"v:",v,"v/v0 : ", v/self.v0,"w:",w,"alpha:",self.alpha, "d/B:",d/B, "w_proposed:",w_proposed,"d:",d,"d0:",d0)
       #print("X:",X,"r:",r,"v:",v,"w:",w,"alpha:",self.alpha,"I:",I,"t:",t, "w_proposed:",w_proposed,"d:",d,"d0:",d0)
       return(v,w)
