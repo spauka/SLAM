@@ -304,7 +304,8 @@ def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Meas
   P0 = Particle_Collection([],env,mot,part_meas)
   if kidnapped:
     P0.draw_n_random(100000)
-    P0.w_fast = 1
+    P0.w_fast = 0.001
+    P0.w_slow = 0.001
   else:
     for i in range(n):
       P0.P.append(Particle(env,mot,part_meas,start_pose))
@@ -329,7 +330,7 @@ def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Meas
     #P.append(P_resampled)
     P_prev = P_new
     i = i+1
-
+    
     plt.figure(0)
     plt.clf()
     env.plot(plt)
