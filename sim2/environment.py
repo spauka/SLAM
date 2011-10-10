@@ -25,6 +25,7 @@ class Environment:
       return sqrt(min(D))
 
   def plot(self,plt):
+    self.B.plot(plt)
     for o in self.O:
       o.plot(plt)
   def inside(self,x,y):
@@ -139,6 +140,19 @@ class Boundary(Rect):
         if (X >= self.x and X <= self.x_max):
           return x_dist**2 + y_dist**2    
     return float('nan') 
+  def plot(self,plt):
+    X0 = self.x-1
+    Y0 = self.y-1
+    X1 = X0
+    Y1 = Y0 + self.height + 2
+    X2 = X0 + self.width + 2
+    Y2 = Y1
+    X3 = X2
+    Y3 = Y0
+    plt.plot([X0,X1],[Y0,Y1],'k-')
+    plt.plot([X1,X2],[Y1,Y2],'k-')
+    plt.plot([X2,X3],[Y2,Y3],'k-')
+    plt.plot([X3,X0],[Y3,Y0],'k-')
 class Segment:
   x1 = array([0,0])
   x2 = array([0,0])
