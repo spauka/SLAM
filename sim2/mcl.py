@@ -35,7 +35,7 @@ def part_from_str(s):
   return p
 
 class Particle_Collection:
-  def __init__(self,P,env,mot,meas,w_slow=1,w_fast=1,a_slow=0.15,a_fast=0.19,r_weight=1):
+  def __init__(self,P,env,mot,meas,w_slow=1,w_fast=1,a_slow=0.065,a_fast=0.07,r_weight=1):
     self.__dict__.update(locals())
   def add(self, p):
     P.append(p)

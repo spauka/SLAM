@@ -295,7 +295,7 @@ def test_KLD(epsilon,z_delta):
   plt.show()
 
 
-def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Measurement_Model(measure_count=5,fov=pi/2,sd_hit=0.02),part_meas=Robot_Measurement_Model(measure_count=5,fov=pi/2,sd_hit=0.4),KLD=True,n=200,kidnapped=False,filename="out.dat",delta=0.15,quant=1.7):
+def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Measurement_Model(measure_count=5,fov=pi/2,sd_hit=0.02),part_meas=Robot_Measurement_Model(measure_count=5,fov=pi/2,sd_hit=0.2),KLD=True,n=200,kidnapped=False,filename="out.dat",delta=0.15,quant=1.7):
   f = open(filename,'w')
   start_pose = Pose(path[0][0],path[0][1],atan2(path[1][1]-path[0][1],path[1][0]-path[0][0]))
 
@@ -303,8 +303,8 @@ def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Meas
   r.tick((0,0),0.1)
   P0 = Particle_Collection([],env,mot,part_meas)
   if kidnapped:
-    P0.draw_n_random(10000)
-    P0.w_fast = 0.5
+    P0.draw_n_random(100000)
+    P0.w_fast = 1
   else:
     for i in range(n):
       P0.P.append(Particle(env,mot,part_meas,start_pose))
