@@ -5,7 +5,7 @@ X_SIZE = 20.0 # Room size
 Y_SIZE = 20.0
 
 DELTA_T = 0.1 # Time per period
-D_DEV = 0.05 # Position change Deviation (16) (0.1)
+D_DEV = 0.02 # Position change Deviation (16) (0.1)
 A_DEV = 0.05 # Accelleration Deviation (17) (0.5)
 L_DEV = 0.02 # Laser Deviation (18) (0.1)
 
