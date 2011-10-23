@@ -1,0 +1,18 @@
+<package>
+  <description brief="fastSLAM">
+
+     fastSLAM
+
+  </description>
+  <author>Sebastian Pauka</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/fastSLAM</url>
+  <depend package="std_msgs"/>
+  <depend package="rospy"/>
+  <depend package="roscpp"/>
+  <depend package="sensor_msgs"/>
+
+</package>
+
+
