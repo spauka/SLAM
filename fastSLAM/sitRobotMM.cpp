@@ -15,7 +15,7 @@ sitRobotMM::doUpdate(particle& p, measurement& u, map& m) {
 	// Check if the measurement contains the right fields.
 	std::list<string> fields = u.getFields();
 	std::list<string>::iterator result;
-	result = std::find(u.begin, u.end, "Position");
+	result = std::find(u.begin, u.end, "Position.x");
 	if (result == fields.end()) {
 		throw "Position not available in Measurement";
 	}
@@ -23,6 +23,6 @@ sitRobotMM::doUpdate(particle& p, measurement& u, map& m) {
 	// Update the position from the measurement.
 	double p_diff_x = u.getMeasurement("Position.x") - p.x;
 	double p_diff_y = u.getMeasurement("Position.y") - p.y;
-	p.x += p_diff_x + pos_rand(gen);
-	p.y += p_diff_y + pos_rand(gen);
+	p.x += p_diff_x + p_diff_x*pos_rand(gen);
+	p.y += p_diff_y + p_diff_y*pos_rand(gen);
 }
