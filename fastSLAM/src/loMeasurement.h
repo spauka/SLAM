@@ -4,16 +4,21 @@
 #include <list>
 #include <string>
 
+#include "measurement.h"
+
 #include <std_msgs/Header.h>
 #include <sensor_msgs/LaserScan.h>
-#include <tf/tfMessage.h>
+#include "nav_msgs/Odometry.h"
 
 class loMeasurement : public measurement {
 	private:
-		struct std_msgs::LaserScan scanData;
-		struct tf::tfMessage frame;
+		double x, y, theta;
 	public:
-		lMeasurement(struct tf::tfMessage frame, struct std_msgs::LaserScan scanData);
-		void* getMeasurement(string name);
-		std::list<string> getFields();
-}
+		loMeasurement();
+		void* getMeasurement(std::string);
+		std::list<std::string> getFields();
+		void updatePosition(nav_msgs::Odometry::ConstPtr);
+		std::string toString();
+};
+
+#endif

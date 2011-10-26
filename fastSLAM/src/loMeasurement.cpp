@@ -1,35 +1,47 @@
 #include "loMeasurement.h"
-#include <string.h>
+#include <string>
+#include <math.h>
 
+#include "ros/ros.h"
 #include <std_msgs/Header.h>
 #include <sensor_msgs/LaserScan.h>
-#include <tf/tfMessage.h>
+#include <nav_msgs/Odometry.h>
 
+#include "boost/format.hpp"
 
-loMeasurement::loMeasurement(struct tf::tfMessage frame, struct std_msgs::LaserScan scanData) {
-	this.scanData = scanData;
-	this.frame = frame;
+loMeasurement::loMeasurement() {
 }
 
-void* loMeasurement::getMeasurement(string name) {
+void* loMeasurement::getMeasurement(std::string name) {
 	if(name == "Header")
-		return this.scanData.header;
+		return 0;
 	else if(name == "Ranges")
-		return this.scanData.ranges;
+		return 0;
 	else if(name == "Position.x")
-		return this.frame.translation.x;
+		return &this->x;
 	else if(name == "Position.y")
-		return this.frame.translation.y;
-	else if(name == "Position.z")
-		return this.frame.translation.z;
+		return &this->y;
+	else if(name == "Position.theta")
+		return &this->theta;
 	else
-		throw "Invalid measurement requested."
+		throw "Invalid measurement requested.";
 }
 
-std::list<string> getFields() {
-	std::list<string> fields;
-	fields.push_front(string("Header"));
-	fields.push_front(string("Ranges"));
-	fields.push_front(string("Position"));
+std::list<std::string> loMeasurement::getFields() {
+	std::list<std::string> fields;
+	fields.push_front(std::string("Header"));
+	fields.push_front(std::string("Ranges"));
+	fields.push_front(std::string("Position.x"));
+	fields.push_front(std::string("Position.y"));
 	return fields;
+}
+
+void loMeasurement::updatePosition(nav_msgs::Odometry::ConstPtr odom) {
+	this->x = odom->pose.pose.position.x;
+	this->y = odom->pose.pose.position.y;
+	this->theta = acos(odom->pose.pose.orientation.w)*2 - 3.141592653589793;
+}
+
+std::string loMeasurement::toString() {
+	return str(boost::format("Position: (%f, %f, %f)") % this->x % this->y % this->theta);
 }
