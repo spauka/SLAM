@@ -7,8 +7,6 @@
 \usepackage[a4paper]{geometry}
 
 %for manual adjustment of borders if necessary
-%\geometry{verbose,tmargin=1.5cm,lmargin=2.5cm,rmargin=2.5cm}
-\usepackage{fullpage}
 \usepackage{verbatim}
 \usepackage{algorithm,algorithmic}
 \usepackage{amsthm}
@@ -188,6 +186,10 @@ It can be shown through induction on Bayes' Rule that $bel(x_{0:t})$ can be give
 \end{align}
 Following this algorithm, asymptotically $\underset{M \to \infty}{\lim} x^{[i]}_t \sim p(x_t \mid z_{1:t}, u_{1:t})$.
 
+\section{Method}
+
+\section{Results}
+
 \section{Discussion}
 
 Bayes Filter (Algorithm \ref{alg:bayes}) provides a mathematical algorithm for calculating $bel(x_t)$; however, in general, it is not Turing-computable or is otherwise impractical \cite{probrob}. By assuming $x_t$ may be represented by a Gaussian distribution and that state transitions are linear, the Kalman Filter provides a practical implementation of the Bayes Filter. Furthermore, by representing the belief distribution as a set of state samples which can be individually updated, the Particle Filter provides an alternate practical implementation of Bayes. Both of these algorithms, in general, run in a much shorter amount of time.
@@ -214,6 +216,8 @@ While the particle filter is more general and can be applied in a larger number 
 In high-dimensional problems (i.e a large number of features in the state vector), Kalman filters scale $O(n^2)$ while Particle Filters scale $O(\log n)$. Hence, Kalman filters perform very poorly in such cases.
 
 Ultimately, the decision about what type of filter is more appropriate requires extensive knowledge of the situation and the problem to which the filter is being applied. In applications where the dimension of the state is small and can be reasonably represented by a gaussian, and state transitions are not overley nonlinear, the Kalman filter may perform well. In more general problems, the Particle Filter is likely to be better applicable. However, in general, the problem of automatically selecting a filtering method and parameters for the filters remains an open problem in the field of robotics which certainly warrants further study.
+
+\section{Conclusion}
 
 \bibliographystyle{plain}
 \bibliography{references}
