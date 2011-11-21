@@ -28,7 +28,7 @@
 
 %Do we need an abstract at this point? It isn't original research, after all.
 \begin{abstract}
-Given the inherant uncertainty of any sensor, filtering is a central issue in the problem of reliable robot perception. Statistical methods have become central to any perception problem. The following report evaluates two common classes of filter, the Kalman Filter and the Particle Filter, in a variety of situations, and uses insights gained to implement the FastSLAM algorithm for mapping.
+Given the inherent uncertainty of any sensor, filtering is a central issue in the problem of reliable robot perception. Statistical methods have become central to any perception problem. The following report evaluates two common classes of filter, the Kalman Filter and the Particle Filter, in a variety of situations, and uses insights gained to implement the FastSLAM algorithm for mapping.
 \end{abstract}
 
 \section{Introduction}
@@ -36,10 +36,24 @@ A fundamental requirement for any robotics system is the ability to perceive and
 
 This data fusion is accomplished through the use of filters. At their core, filters combine observable processes such as sensor data and knowledge about what the robot is doing into a model of its surroundings, representing the \emph{state} of the robot. Two common filters are addressed in this report: the Kalman Filter and the Particle filter.
 
-% Add stuff about the SLAM problem.
+The use of statistical filters has been particularly successful in attempting to solve two of the largest problems in robotics, localization and mapping. The term localization encompasses a number of problems. In order of increasing difficulty, a full treatment of localization implies solutions to the problems of:
+\begin{enumerate}
+ \item \emph{Position Tracking} - in which the initial position of the robot is known, and hence only keeping track of the motion is required.
+ \item \emph{Global Localization} - in which the initial position is not known and must be determined from sensor inputs.
+ \item \emph{Kidnapped Robot Problem} - in which a robot's position may be changed without its knowledge, hence the change must be detected and position must be recalculated. This problem is different to the Global Localization problem in that the robot does not know that it's position is indeterminate. With the knowledge that localization could fail (leading to an erroneous position determination), a full treatment of the localization problem should be able to solve the Kidnapped Robot Problem and hence recover from global localization failures \cite[pp 193-196]{probrob}.
+\end{enumerate}
+
+Note that the treatment of the localization problems in this report assumes that a passive approach with a single robot.
+
+With reference to the algorithms that have been studied previously, there are several algorithms which solve the Kidnapped Robot Problem, including Multi Hypothesis Tracking (MHT), which utilises an Unscented Kalman Filter to represent a number of possible positions, and Monte Carlo Localization (MCL) which utilises Particle Filters to perform localization \cite[pp 274]{probrob}. The report gives a rigorous treatment of MCL to the kidnapped robot problem.
+
+Considering now the mapping problem, there are again a number of problems which must be solved to perform mapping. In particular, in this report, we consider the Simultaneous Localization and Mapping (SLAM) problem, which assumes uncertainty in both the location and the sensor measurements in constructing a map. In order for a full solution to this problem, it must simultaneously handle localization errors by correcting position estimates with the map, while constructing the map using position estimates. The circular nature of the problem makes it one of the most difficult in the field of robotics.
+
+One of the most popular algorithms for solving the SLAM problem is the FastSLAM algorithm, which at a high level, utilizes particle filters to represent a number of candidate maps constructed off uncertain position estimates and selects those maps which best fits observations. In this report, an algorithm for performing FastSLAM is described and evaluated.
 
 \section{Background}
 
+\subsection{Filtering Algorithms}
 There has been a lot of effort placed into developing statistical methods for filtering information. Recent developments in robotics have focused on exploiting the statistical nature of the uncertainty of measurement to derive some internal state from a variety of sensory and command inputs.
 
 The internal state is given in discrete steps by the variable $x_t$, indexed by time $t$. In addition, at time $t$, control data $u_t$ and measurements $z_t$ are received. It is assumed that commands and measurements occur in discrete steps with the measurement $z_t$ taken after the preceding control command given by $u_t$ has been completed. The state $x_t$ is not directly observable and must be generated stochastically from the previous states $x_{0:t-1}$, movement commands $u_{1:t-1}$ and sensor inputs $z_{0:t}$ \cite{Thrun02d}. If $x_t$ is conditionally independent of $x_{0:t-2}$ and $u_{1:t-2}$ given $x_{t-1}$, x is said to be \emph{complete} and satisfies the \emph{Markov Condition}\cite{probrob}. Although $x_t$ is hidden, the measurement $z_t$ is generated stochastically from $x_t$ allowing for indirect observation\cite{Thrun02d}.
@@ -50,7 +64,9 @@ The belief distribution $bel(x_t)$ of the state $x_t$ assigns a probability to e
   \overline{bel}(x_t) & = p(x_t \mid z_{1:t-1}, u_{1:t}) \label{eq:prediction}
 \end {align}
 
-\subsection{Bayes Filter}
+The following methods generally assume the Markov Condition, namely the assumption that past and future states are independent if the current state is known. In other words, all future states should be able to be extrapolated from complete knowledge of the present state. This represents a very strict precondition, and in practice, due to a number of factors such as unmodeled dynamics (factors of the environment not taken into account), inaccuracy of the models etc. it is impossible to completely satisfy this condition. Therefore any method that assumes the Markov condition must also be relatively robust against violations of the condition since it is impossible for the Markov condition to be completely satisfied in practice \cite[pp 33]{probrob}.
+
+\subsubsection{Bayes Filter}
 
 % Define complete here...
 
@@ -69,11 +85,11 @@ The Bayes Filter is an algorithm used to calculate the belief $bel(x_t)$. It is 
 \end{algorithmic}
 \end{algorithm}
 
-However, this algorithm is intractable in all but the simplest of scenarios, requiring a sum over the entire state space for all $x_t$. For continuous random variables, this is accomplished via an integral which in general, does not necessarily have an analytic solution. For finite state spaces, this is accomplished via a summation over the state space, which may, too be impractically computationally expensive. On the other hand, the normalisation of the measuremement update $\eta$ is easily calculated as a summation over the unnormalised posterior, as the posterior is calculated for all $x_t$.
+However, this algorithm is intractable in all but the simplest of scenarios, requiring a sum over the entire state space for all $x_t$. For continuous random variables, this is accomplished via an integral which in general, does not necessarily have an analytic solution. For finite state spaces, this is accomplished via a summation over the state space, which may, too be impractically computationally expensive. On the other hand, the normalisation of the measurement update $\eta$ is easily calculated as a summation over the unnormalised posterior, as the posterior is calculated for all $x_t$.
 
-It is, however, possible to simplify or approximate the algorithm given certain restrictions on the input. Both the Kalman and Particle Filters provide practical implementions of the Bayes Filter by making suitable assumptions or approximations.
+It is, however, possible to simplify or approximate the algorithm given certain restrictions on the input. Both the Kalman and Particle Filters provide practical implementations of the Bayes Filter by making suitable assumptions or approximations.
 
-\subsection{Kalman Filter}
+\subsubsection{Kalman Filter}
 
 One of the most common implementations of the Bayes filter is the Kalman Filter. It is structurally very similar to Hidden Markov Model, however with the nodes being real valued vectors and the probability model being Gaussian \cite{kalfilter}. It is one of the most studied filtering techniques for a number of reasons, including its simplicity and efficiency.
 
@@ -83,7 +99,7 @@ The filter relies on a number of assumptions about the inputs, above those made 
 		\begin{equation}
 			x_{t} = A_{t} x_{t-1} + B_{t} u_{t} + \epsilon _{t}
 		\end{equation}
-		Since $A_{t}$ and $B_{t}$ are constant, the state transition function is linear in its arguments. The noise is a multivariate gaussian with mean zero and covariance $R_t$.
+		Since $A_{t}$ and $B_{t}$ are constant, the state transition function is linear in its arguments. The noise is a multivariate Gaussian with mean zero and covariance $R_t$.
 	\item The measurement probability must also be linear in its arguments, again with added Gaussian nose. It is expressed as:
 		\begin{equation}
 			z_{t} = C_{t} x_{t} + \delta _{t}
@@ -150,7 +166,7 @@ By substitution of $\mu_t$ and $\Sigma_t$ into the definition of the multivariat
 
 It is interesting to note that the Kalman filter can be interpreted as a LMS error correcting algorithm. We can through simplification of the Kalman filter find that it is functionally equivalent to the LMS algorithm.
 
-\subsection{Particle Filter}
+\subsubsection{Particle Filter}
 
 %Overview of a particle filter - state represented as a sampling of possible states
 Whereas the Kalman Filter represents the belief as a parameterised Gaussian distribution, the Particle Filter is non-parameterised, representing the belief at time $t$ as a finite set $\chi_t$ of $M$ states $\{x^{[1]}_t, x^{[2]}_t, \cdots , x^{[M]}_t\}$ drawn from the state space according to the distribution of the posterior. By increasing the number of particles, $\chi$ can be made to asymptotically approximate any distribution without any regards to constraints such as uni-modality\cite{Thrun02d}.
@@ -191,6 +207,32 @@ It can be shown through induction on Bayes' Rule that $bel(x_{0:t})$ can be give
   bel(x_{0:t}) & = \eta w^{[m]}_tp(x_t \mid x_{t-1}, u_t)p(x_{0:t-1} \mid z_{0:t-1},u_{0:t-1}) \label{eq:particle_equation}
 \end{align}
 Following this algorithm, asymptotically $\underset{M \to \infty}{\lim} x^{[i]}_t \sim p(x_t \mid z_{1:t}, u_{1:t})$.
+
+\subsection{Localization}
+
+\subsection{The SLAM Problem}
+Having defined a number of algorithms for performing filtering and localization, we would now like to combine all the previous information into a statistical method for constructing a map. Given that we know that both position information and scan information is uncertain, we would like to some how construct a map which combines the uncertainties of all control and sensor measurements to create a statistically most likely map.
+
+Construction of a map represents one of the most difficult problems in the field of robotics as there is a circular dependency which occurs in this process. Namely, construction of the map depends on a certain position, however the position depends on the correlation of observations with the map. With this in mind, it is possible to define two classes of the SLAM problem:
+\begin{enumerate}
+ \item \emph{Online SLAM Problem} - Wherein the posterior and the map is estimated over the momentary pose. In other words, only the current pose $x_t$ is used to calculate the map $m$ and correspondence variables $c_t$:
+	\begin{equation}
+	 p\left(x_t, m, c_t | z_{1:t}, u_{1:t}\right)
+	\end{equation}
+	Often the previous measurement and control are forgotten after the measurement is incorporated, potentially making the online SLAM problem more efficient than the Full SLAM Problem. In addition, the result of the online SLAM problem is the result of integrating all past posses one at a time, leading to interesting dependencies between measurements which may lead to an error which must be accounted for. However, this does have the advantage of building a map as the robot navigates, of which control decisions can be made. Any autonomous mapping algorithm would be expected to solve the full SLAM problem.
+ \item \emph{Full SLAM Problem} - Wherein the posterior and map is estimated over the entire path $x_{1:t}$ along with the map:
+  \begin{equation}
+   p\left(x_{1:t}, m, c_{1:t} | z_{1:t}, u_{1:t}\right)
+  \end{equation}
+  While a solution Full SLAM Problem may lead to more accurate results in some circumstances, due to its ability to propagate pose uncertainties back through the full construction as new data is incorporated, measurements must be completed before a map can be constructed making it unsuitable for the construction of maps on the fly, and decision making processes on incomplete maps.
+\end{enumerate}
+
+Therefore, there are two separate issues which must be addressed to solve the SLAM problem. The first is the representation of the map, the second, how to simultaneously represent the uncertainty in the posterior and the measurement while making usable approximations out of both of these values. 
+
+Here, we deal exclusively with the occupancy grid representation of a map as opposed to a feature based representation, which represents map positions in a grid, labelled either occupied or unoccupied (with corresponding uncertainties). This representation generally encodes a 2 dimensional slice of observations, using a fine grained grid to represent occupancy. Due to this fact, the dimensionality of a map is generally very high, meaning it is infeasible to calculate the probability of each individual map. However, we can calculate the probability of a map as the probability over each of its cells, each of which encode a binary state:
+\begin{equation}
+p\left(m, ... | z_{1:t}, x_{1:t}\right) = \prod_i p\left(\textbf{m}_i, ... | z_{1:t}, x_{1:t}\right)
+\end{equation}
 
 \section{Method}
 % Discuss Kalman Filter implementation, then EKF.
