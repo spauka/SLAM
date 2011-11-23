@@ -2,7 +2,7 @@
 
 %I think these are useful for pdftex compatibility. I bastardised an old latex report.
 \usepackage[T1]{fontenc}
-\usepackage[latin9]{inputenc}
+\usepackage[utf8]{inputenc}
 
 \usepackage[a4paper]{geometry}
 
@@ -26,7 +26,6 @@
 \author{Duncan Burke and Sebastian Pauka}
 \maketitle
 
-%Do we need an abstract at this point? It isn't original research, after all.
 \begin{abstract}
 Given the inherent uncertainty of any sensor, filtering is a central issue in the problem of reliable robot perception. Statistical methods have become central to any perception problem. The following report evaluates two common classes of filter, the Kalman Filter and the Particle Filter, in a variety of situations, and uses insights gained to implement the FastSLAM algorithm for mapping.
 \end{abstract}
@@ -188,15 +187,15 @@ Hence, the complete algorithm is:
 \begin{algorithmic}
 	\REQUIRE $\chi_{t-1}, u_t, z_t$
         \STATE $\bar{\chi}_t = \chi_t = \emptyset$
-        \FOR {$m = 1$ to $M$}
+        \FOR {$m \leftarrow 1$ to $M$}
         \STATE sample $x^{[m]}_t \sim p(x_t \mid u_t,x^{[m]}_{t-1})$
-        \STATE $w^{[m]}_t = p(z_t \mid x^{[m]}_t)$
-        \STATE Add $x^{[m]}_t$ and $w^{[m]}_t$ to $\bar{\chi}_t$
+        \STATE $w^{[m]}_t \leftarrow p(z_t \mid x^{[m]}_t)$
+        \STATE Add $\left\langle x^{[m]}_t, w^{[m]}_t \right\rangle$ to $\bar{\chi}_t$
         \ENDFOR
 
         \FOR {$m = 1$ to $M$}
-        \STATE Select an index $i \in [1,m]$ with probability $\eta w^{[i]}_t$
-        \STATE Add $x^{[i]}_t$ to $\chi_t$
+        \STATE Select an index $i \in [1,m]$ with probability $\propto w^{[i]}_t$
+        \STATE Add $\left\langle x^{[i]}_t \right\rangle$ to $\chi_t$
         \ENDFOR
 
 \end{algorithmic}
@@ -229,10 +228,85 @@ Construction of a map represents one of the most difficult problems in the field
 
 Therefore, there are two separate issues which must be addressed to solve the SLAM problem. The first is the representation of the map, the second, how to simultaneously represent the uncertainty in the posterior and the measurement while making usable approximations out of both of these values. 
 
-Here, we deal exclusively with the occupancy grid representation of a map as opposed to a feature based representation, which represents map positions in a grid, labelled either occupied or unoccupied (with corresponding uncertainties). This representation generally encodes a 2 dimensional slice of observations, using a fine grained grid to represent occupancy. Due to this fact, the dimensionality of a map is generally very high, meaning it is infeasible to calculate the probability of each individual map. However, we can calculate the probability of a map as the probability over each of its cells, each of which encode a binary state:
+Here, we deal exclusively with the occupancy grid representation of a map as opposed to a feature based representation, which represents map positions in a grid, labelled either occupied or unoccupied (with corresponding uncertainties). 
+
+\subsubsection{Occupancy Grids}
+The ocuupancy grid representation of a map generally encodes a 2 dimensional slice of observations, using a fine grained grid to represent occupancy. Due to this fact, the dimensionality of the map increases with the size of the map squared (i.e. area), and thus the dimensionality of a map is generally very high, meaning it is infeasible to calculate the probability of each individual map out of the set of all possible maps. For example, given a side length of 100 cells, the total number of cells is $100^2$ and the total number of possible maps is $2^{100^2}$. However, we can calculate the probability of a map as the probability over each of its cells, each of which encode a binary state:
 \begin{equation}
-p\left(m, ... | z_{1:t}, x_{1:t}\right) = \prod_i p\left(\textbf{m}_i, ... | z_{1:t}, x_{1:t}\right)
+p\left(m | z_{1:t}, x_{1:t}\right) = \prod_i p\left(\textbf{m}_i | z_{1:t}, x_{1:t}\right)
 \end{equation}
+
+Note that we assume that the pose $x_{1:t}$ is assumed to be certain. 
+
+By this representation, the probability is given as a binary estimation problem with static state. We note also that that the probability of cells being occupied or otherwise is often close to zero, Because of this it may be more approriate to use the log odds representation for the probability of occupancy:
+\begin{equation}
+l_{t,i} = \log{\frac{p(\textbf{m}_i | z_{1:t}, x_{1:t})}{1-p(\textbf{m}_i | z_{1:t}, x_{1:t})}}
+\end{equation}
+
+The final observation we make is that the probability of occupancy is only likely to change if a measurement is made in the field of observation for the robot in its current state. This significantly decreases the number of cells which must be updated.
+
+The full algorithm for creating an occupancy grid is thus given by algorithm ~\ref{alg:occgrid}.
+
+\begin{algorithm}
+\caption{Occupancy Grid Mapping}
+\label{alg:occgrid}
+\begin{algorithmic}
+	\REQUIRE $m_{t-1}, x_t, z_t$
+	\FOR {all $\textbf{m}_{t-1,i}$ in $m_{t-1}$}
+	\IF {$\textbf{m}_{t-1,i}$ in perceptual field of $z_t$}
+	\STATE {$\textbf{m}_{t, i} \leftarrow \textbf{m}_{t-1,i} + \textbf{inverse\_sensor\_model}\left(m_{t-1,i}, x_t, z_t\right) - l_0$}
+	\ELSE
+	\STATE $\textbf{m}_{t, i} \leftarrow \textbf{m}_{t-1, i}$
+	\ENDIF
+	\ENDFOR
+	\RETURN $m_t$
+\end{algorithmic}
+\end{algorithm}
+
+The function \textbf{inverse\_sensor\_model} is dependant on the sensor data and thus cannot be defined in general.
+
+\subsubsection{FastSLAM}
+The FastSLAM algorithm, and its later deriviatives such as DP-SLAM and DP-SLAM 2.0, are amongst the most successful algorithms in solving the SLAM problem, both in terms of accuracy and speed. The key feature of the SLAM problem that allows the use of particle filters, which scale exponentially with dimension, making their use unsuitable for highly dimensional data such as occupancy grids, is that there is conditional independance of between features on a map given the robot pose. In other words, if we know the exact position of the robot, then each of the scanned beams, in the case of a laser range finder, are independant of each other, as we would intuitively expect.
+
+As such, we can factor the map as for each of the particles, due to the fact that the individual map errors are conditionally independant of each other. This property means that we can overcome the problem of the high dimensionality of the representation therefore making the particle filter efficient enough for use in mapping.
+
+The form of particle filters we apply to the problem are known as Rao-Blackwellized particle filters, based on the work of Rao(1945) and Blackwell(1947) in computing distributions over sets of variables by combining parametric density functions.
+
+The algorithm as described can be used in both feature based and occupancy grid based mapping algorithms. The following discussion focuses exclusively on the occupancy grid mapping approach.
+
+The core idea of the particle filter algorithm is that each particle describes a robot pose, and in the construction of the map, it is assumed that the robot pose is described by each particle with complete accuracy. This approach solves the earlier problem of the position depending on the map, and the map depending on the position as uncertainty in the position is represented by a diversity of particles, and hence is not factored into the generation of the map. Particles are then selected by the process of importance resampling as defined in the algorithm ~\ref{alg:particle}.
+
+The strength of the FastSLAM algorithm comes from the fact that data associations are stored per particle, and as such the algorithm stores a map per possible path making it much more robust to data association problems. This is in contrast to other common algorithms used for mapping, such as SLAM with EKF's, GraphSLAM or SEIF, where a map is only stored for the most likely track. In addition, since the particle filter does not rely on a linear motion and measurement model (or even a linearisable model), complicated non-linear models can bbe used with particle filters to build a map.
+
+It is interesting to note that the FastSLAM algorithm solves both the Online SLAM and Full SLAM problems as while the linearity assumption requires a certain path and therefore requires the full path posterior, by virtue of the fact that particle filters are implemented via an incremental algorithm, the solution it generates per unit time also solves the Online SLAM problem.
+
+As it turns out, the FastSLAM algorithm for occupancy grid maps is surprisingly simple given the algorithms we have previously defined. Assume each particle contains and estimate of the position $x_t$ and the associated map $m_t$. In addition, define a value $w_t$ associated with each particle which is the importance factor for each particle. As before, we deonte the set of all particles at time $t$ by $\chi_{t}$.
+
+Looking at algorithm ~\ref{alg:particle}, we need to perform and update of the motion model, calculate an importance factor from the calculated map (algorithm ~\ref{alg:loc}) and finally update the occupancy grid (algorithm ~\ref{alg:occgrid}). After this the algorithm simply continues as per a standard particle filter.
+
+This algorithm is summarized in algorithm ~\ref{alg:FastSLAM}.
+
+\begin{algorithm}
+\caption{FastSLAM Algorithm}
+\label{alg:FastSLAM}
+\begin{algorithmic}
+	\REQUIRE $\chi_{t-1}, u_t, z_t$
+	\STATE $\bar{\chi}_t, \chi_t \leftarrow \emptyset$
+	\FOR {$k \leftarrow 1$ to $M$}
+	\STATE $x_t^{[k]} \leftarrow \textbf{sample\_motion\_model}(u_t, x_{t-1}^{[k]})$
+	\STATE $w_t^{[k]} \leftarrow \textbf{measurement\_model\_map}(z_t, x_t^{[k]}, m_{t-1}^{[k]})$
+	\STATE $m_t^{[k]} \leftarrow \textbf{updated\_occupancy\_grid}(z_t, x_t^{[k]}, m_{t-1}^{[k]})$
+	\STATE Add $\left\langle x_t^{[k]}, m_t^{[k]}, w_t^{[k]} \right\rangle$ to $\bar{\chi}_t$
+	\ENDFOR
+	\FOR {$k \leftarrow 1$ to $M$}
+	\STATE Select an index $i \in [1,m]$ with probability $\propto w_t^{[i]}$
+	\STATE Add $\left\langle x_t^{[k]}, m_t^{[k]} \right\rangle$ to $\chi_t$
+	\ENDFOR
+	\RETURN $\chi_t$
+
+
+\end{algorithmic}
+\end{algorithm}
 
 \section{Method}
 % Discuss Kalman Filter implementation, then EKF.
