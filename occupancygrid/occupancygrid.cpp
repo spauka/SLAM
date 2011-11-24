@@ -12,9 +12,9 @@ void mapCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg){
   nav_msgs::MapMetaData info = msg->info;
   ROS_INFO("Got map %d %d", info.width, info.height);
   Map map(info.width, info.height);
-  for (int x = 0; x < info.width; x++)
-    for (int y = 0; y < info.height; y++)
-      map.Insert(Cell(x,y,msg->data[x+ info.width * y]));
+  for (unsigned int x = 0; x < info.width; x++)
+    for (unsigned int y = 0; y < info.height; y++)
+      map.Insert(Cell(x,y,info.width,msg->data[x+ info.width * y]));
   nav_msgs::OccupancyGrid* newGrid = map.Grid();
   newGrid->header = header;
   newGrid->info = info;
