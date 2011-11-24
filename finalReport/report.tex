@@ -309,6 +309,9 @@ This algorithm is summarized in algorithm ~\ref{alg:FastSLAM}.
 \end{algorithm}
 
 \section{Method}
+Initially, our aim was to evaluate the usefulness and quality of the various forms of the filter. To do this, it was necessary to set up an environment in which it would be possible to obtain repeatable results in a consistent manner across all forms of filtering.
+In order to do this, a simple situation was devised off which tests could be run. It was decided that since the aim was simply to test implementations one by one the simplest possible situation could be used. The parameters of the situation were defined to be a robot contained in a square room, of dimensions 20 by 20 units.. The robot has a set of sensors, including odometry, and a simple range finder pointing in four directions orthogonal to each other, measuring the distance to the walls in the directions of up, down, left and right. 
+The robot is assumed to always have an orientation in the upwards direction, thereby reducing the problem to two dimensions, x and y. Finally, the robot was assumed to move at a constant velocity after being given acceleration commands which would accelerate the robot by some magnitude in the x or y direction for one unit time.
 % Discuss Kalman Filter implementation, then EKF.
 % Discuss Particle Filter implementation.
 % Discuss Kidnapped Robot Problem Implementation.
