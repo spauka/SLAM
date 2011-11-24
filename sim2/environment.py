@@ -107,7 +107,7 @@ class Boundary(Rect):
     evaly = not evalx
     
     if (r[0] > 0): 
-      x_dist = self.x_max -x[0]
+      x_dist = self.x_max - x[0]
       if (x_dist > 0):
         y_dist = (x_dist)*r[1]/r[0]
         Y =  y_dist + x[1]
