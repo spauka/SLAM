@@ -1,0 +1,15 @@
+<package>
+  <description brief="occupancygrid">
+
+     occupancygrid
+
+  </description>
+  <author>Duncan</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/occupancygrid</url>
+  <depend package="nav_msgs"/>
+
+</package>
+
+
