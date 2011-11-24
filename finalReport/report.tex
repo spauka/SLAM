@@ -53,6 +53,7 @@ One of the most popular algorithms for solving the SLAM problem is the FastSLAM 
 \section{Background}
 
 \subsection{Filtering Algorithms}
+\label{sec:filtering}
 There has been a lot of effort placed into developing statistical methods for filtering information. Recent developments in robotics have focused on exploiting the statistical nature of the uncertainty of measurement to derive some internal state from a variety of sensory and command inputs.
 
 The internal state is given in discrete steps by the variable $x_t$, indexed by time $t$. In addition, at time $t$, control data $u_t$ and measurements $z_t$ are received. It is assumed that commands and measurements occur in discrete steps with the measurement $z_t$ taken after the preceding control command given by $u_t$ has been completed. The state $x_t$ is not directly observable and must be generated stochastically from the previous states $x_{0:t-1}$, movement commands $u_{1:t-1}$ and sensor inputs $z_{0:t}$ \cite{Thrun02d}. If $x_t$ is conditionally independent of $x_{0:t-2}$ and $u_{1:t-2}$ given $x_{t-1}$, x is said to be \emph{complete} and satisfies the \emph{Markov Condition}\cite{probrob}. Although $x_t$ is hidden, the measurement $z_t$ is generated stochastically from $x_t$ allowing for indirect observation\cite{Thrun02d}.
@@ -89,7 +90,7 @@ However, this algorithm is intractable in all but the simplest of scenarios, req
 It is, however, possible to simplify or approximate the algorithm given certain restrictions on the input. Both the Kalman and Particle Filters provide practical implementations of the Bayes Filter by making suitable assumptions or approximations.
 
 \subsubsection{Kalman Filter}
-
+\label{sec:kalfilter}
 One of the most common implementations of the Bayes filter is the Kalman Filter. It is structurally very similar to Hidden Markov Model, however with the nodes being real valued vectors and the probability model being Gaussian \cite{kalfilter}. It is one of the most studied filtering techniques for a number of reasons, including its simplicity and efficiency.
 
 The filter relies on a number of assumptions about the inputs, above those made by the Bayes' Filter, namely:
@@ -309,10 +310,84 @@ This algorithm is summarized in algorithm ~\ref{alg:FastSLAM}.
 \end{algorithm}
 
 \section{Method}
+\subsection{Filtering}
 Initially, our aim was to evaluate the usefulness and quality of the various forms of the filter. To do this, it was necessary to set up an environment in which it would be possible to obtain repeatable results in a consistent manner across all forms of filtering.
-In order to do this, a simple situation was devised off which tests could be run. It was decided that since the aim was simply to test implementations one by one the simplest possible situation could be used. The parameters of the situation were defined to be a robot contained in a square room, of dimensions 20 by 20 units.. The robot has a set of sensors, including odometry, and a simple range finder pointing in four directions orthogonal to each other, measuring the distance to the walls in the directions of up, down, left and right. 
-The robot is assumed to always have an orientation in the upwards direction, thereby reducing the problem to two dimensions, x and y. Finally, the robot was assumed to move at a constant velocity after being given acceleration commands which would accelerate the robot by some magnitude in the x or y direction for one unit time.
-% Discuss Kalman Filter implementation, then EKF.
+
+In order to do this, a simple situation was devised off which tests could be run. It was decided that since the aim was simply to test implementations one by one the simplest possible situation could be used. The parameters of the situation were defined to be a robot contained in a square room, of dimensions 20 by 20 units, with the origin of the map frame defined to be in the bottom left corner. The robot has a set of sensors, including odometry, and a simple range finder pointing in four directions orthogonal to each other, measuring the distance to the walls in the directions of up, down, left and right. 
+
+The robot is assumed to always have an orientation in the upwards direction, eliminating the consideration of orientation and thereby reducing the problem to two dimensions, x and y. Finally, the robot was assumed to move at a constant velocity after being given acceleration commands which would accelerate the robot by some magnitude in the x or y direction for one unit time. To mimic the behavior of sensors, noise was artificially added into the simulation by means of random Gaussian variables.
+
+The outputs of the system, namely the difference in position and the acceleration as well as the sensor readings, to which random Gaussian noise was added, were used as the inputs to the filter, which was then evaluated on its ability to remove the random noise by synthesis of the various variables to form a relatively noise free output which mirrors the actual position and velocity of the simulated robot.
+
+In this section, three different forms of filter were evaluated on the same model. These were the Kalman filter, the Extended Kalman filter and the Particle filter. These algorithms are based off the descriptions given in section \ref{sec:filtering}.
+
+Unfortunately, the internal models by which the Kalman Filters and the Particle Filters are constructed precludes a direct comparison of the efficacy of the two algorithms in filtering data, as will be shown below. This means that any further discussion on the merits of one algorithm over the other will be purely based on the authors observations and previous research into the two classes of algorithm.
+
+Each filter was written up in Matlab and processed the same set of data. The ability for the filter to remove the simulated noise was the key metric used in comparing the algorithms.
+
+\subsubsection{The Kalman Filter and Extended Kalman Filter}
+As mentioned in section ~\ref{sec:kalfilter}, one of the primary pitfalls of using a simple Kalman Filter in robotics algorithms is the fact that the measurement and movement models are linear functions. This restriction severely limits the type of information which can be incorporated into the filter.
+
+As a result, the Kalman filter implementation focused only on a limited subset of the inputs due to the requirement that the models be linear. Specifically, the implementation focused only on synthesizing the acceleration data ($a_x, a_y$), and two of the range finder measurements($d, l$), those pointing down and to the left. These measurements, you will note, translate directly into the position of the robot, assuming the coordinate system has its origins located at the bottom left of the map. The pose of the robot was represented by position and velocity ($x, y, v_x, v_y$).
+
+The state matrices are therefore given by:
+\begin{eqnarray}
+A &=& \left[ \begin{array}{cccc}
+1 & 0 & \delta t & 0 \\
+0 & 1 & 0 & \delta t \\
+0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 1\end{array} \right] \\
+B &=& \left[ \begin{array}{cc}
+\frac{\delta t^2}{2} & 0 \\
+0 & \frac{\delta t^2}{2} \\
+\delta t & 0 \\
+0 & \delta t \end{array} \right] \\
+C &=& \left[ \begin{array}{cccc}
+1 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 \end{array} \right]
+\end{eqnarray}
+
+The covariances of the measurements are given to be:
+\begin{eqnarray}
+R &=& \mathrm{A\_DEV} * \left[ \begin{array}{cccc}
+1&0&0&0\\
+0&1&0&0\\
+0&0&1&0\\
+0&0&0&1 \end{array} \right] \\
+Q &=& \mathrm{L\_DEV} * \left[ \begin{array}{cc}
+1&0\\
+0&1 \end{array} \right]
+\end{eqnarray}
+where A\_DEV and L\_DEV are parameters of the robot that is being investigated. In our case, it is found that the values are given by:
+\begin{eqnarray}
+\mathrm{L\_DEV} &=& 0.1 \\
+\mathrm{A\_DEV} &=& 0.1
+\end{eqnarray}
+
+It is assumed that at time $t=0$ the robot is located at the point $(10, 10)$ with zero velocity with complete certainty. We note that this reduces the problem that is being evaluated in this situation to the first class of localization problem, namely that of \emph{Position Tracking}.
+
+By using an Extended Kalman Filter, it is possible to include the parameters that were omitted, as the EFK allows for arbitrary state transition functions $A=g(x), B=h(x)$, which are linearized in the evaluation of the Kalman Filter. By utilizing this form of filter, it is possible to include the missing information, namely the other two range finder's data ($u, r$), pointing in the up and the right direction.
+
+In this case, we consider modifications to two of the main functions. The control(/time) update is performed virtually identically to before, where we calculate $\overline{\mu}_t$ to be linearly dependant on the measured acceleration of the system. However, given the non-linearity present in the measurement step, we must apply the function and linearize to obtain the correct result.
+
+In this case, define:
+\begin{equation}
+h(x) = \left[ \begin{array}{cccc}l&20-r&d&20-u\end{array}\right]
+\end{equation}
+
+The Jacobian of this matrix of the system is then given by:
+\begin{equation}
+H = \left[ \begin{array}{cc}
+1&0\\
+-1&0\\
+0&1\\
+0&-1\\ \end{array} \right]
+\end{equation}
+
+Given that the uncertainties are the same as those for the Kalman Filter, we have enough information to apply the Extended Kalman Filter algorithm.
+
+\subsubsection{Particle Filter}
+The definition of the particle differs from that of the Kalman filter in a number of key areas. First off, the particle filter aims to solve the Global Localization problem, as opposed to the Tracking problem that the Kalman filter algorithm presented above attempted to solve. 
 % Discuss Particle Filter implementation.
 % Discuss Kidnapped Robot Problem Implementation.
 % Discuss SLAM Implementation
