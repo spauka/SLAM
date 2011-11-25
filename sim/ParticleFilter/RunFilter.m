@@ -11,7 +11,7 @@ dataSize = size(data);
 err = zeros(2,dataSize(1));
 RMSE = zeros(1000,dataSize(1));
 
-for count = 1:1000
+for count = 1:6
 	chi = GenerateInitialDistribution();
 	result = zeros(4,dataSize(1));
 	for X = 1:dataSize(1)
@@ -23,7 +23,7 @@ for count = 1:1000
 		 RMSE(count,X) = sqrt(err(1,X).^2 + err(2,X).^2);
 	end
 	count
-	clf
+	subplot(3,2,count)
 	scatter(result(1,:), result(2,:))
 	hold on
 	scatter(data(:,10), data(:,11))
