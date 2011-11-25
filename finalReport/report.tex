@@ -432,8 +432,29 @@ H = \left[ \begin{array}{cc}
 Given that the uncertainties are the same as those for the Kalman Filter, we have enough information to apply the Extended Kalman Filter algorithm.
 
 \subsubsection{Particle Filter}
-The definition of the particle differs from that of the Kalman filter in a number of key areas. First off, the particle filter aims to solve the Global Localization problem, as opposed to the Tracking problem that the Kalman filter algorithm presented above attempted to solve. 
-% Discuss Particle Filter implementation.
+The definition of the particle differs from that of the Kalman filter in a number of key areas. First off, the particle filter aims to solve the Global Localization problem, as opposed to the Tracking problem that the Kalman filter algorithm presented above attempted to solve. As before, the same situations were used, including the same measurement uncertainties, which led to a simple implementation based trivially around the sensor inputs.
+
+The state change probability was sampled around a distribution defined by:
+\begin{eqnarray}
+V_t &\sim& \mathcal{N}(v_{t-1} + u_{a,t-1}*\delta t, A_DEV) \\
+X_t &\sim& \mathcal{N}(x_{t-1} + v_t*\delta t, A_DEV)
+\end{eqnarray}
+
+The weighting function then measures the probability given the following distribution:
+\begin{eqnarray}
+P(\mu_t | z_t) &=& P(\mu_t | u_t, d_t, l_t, r_t) \\
+ &=& P(\mu_t | u_t) P(\mu_t | d_t) P(\mu_t | l_t) P(\mu_t | r_t)
+\end{eqnarray}
+
+Since we know the laser measurements are distributed normally around (eq. \ref{eq:las} the actual value, it becomes a trivial matter to calculate, given the assumption that $u, d, l, r$ are all independent of each other. Note that in eq. \ref{eq:las}, $x_{t}$ is taken to be the true pose of the robot.
+
+\begin{equation}
+\label{eq:las}
+p(z_t) \sim \mathcal{N}(x_t, \mathrm{L\_DEV})
+\end{equation}
+
+The metric used to determine the accuracy of the obtained results was the RMSE (root mean square error) (eq. ~\ref{eq:rmse}) algorithm, which quantitatively describes the error of each pose estimate, and hence allows comparison of states. In order to counteract the random noise introduced by producing the particle filter representation, the error for each time step was determined as the average RMSE errors over multiple iterations of the algorithm. In our case the values were averaged over 100 iterations of the algorithm.
+
 % Discuss Kidnapped Robot Problem Implementation.
 % Discuss SLAM Implementation
 
