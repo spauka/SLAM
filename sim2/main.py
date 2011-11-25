@@ -298,7 +298,7 @@ def test_KLD(epsilon,z_delta):
   plt.show()
 
 
-def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Measurement_Model(measure_count=6,fov=pi/3,sd_hit=0.02),part_meas=Robot_Measurement_Model(measure_count=6,fov= pi/3,sd_hit=0.2),KLD=True,n=200,kidnapped=False,filename="out",epsilon=0.5,quant=1.65):
+def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Measurement_Model(measure_count=6,fov=pi/3,sd_hit=0.02),part_meas=Robot_Measurement_Model(measure_count=6,fov= pi/3,sd_hit=0.2),KLD=True,n=200,kidnapped=False,filename="out",epsilon=0.01,quant=1.65):
   if not os.path.exists(filename):
     os.makedirs(filename)
   f = open(filename + "/data.dat",'w')

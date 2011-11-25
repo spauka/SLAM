@@ -357,8 +357,7 @@ This algorithm is summarized in algorithm ~\ref{alg:FastSLAM}.
 \end{algorithmic}
 \end{algorithm}
 
-\section{Method}
-\subsection{Filtering}
+\section{Experiment 1}
 Initially, our aim was to evaluate the usefulness and quality of the various forms of the filter. To do this, it was necessary to set up an environment in which it would be possible to obtain repeatable results in a consistent manner across all forms of filtering.
 
 In order to do this, a simple situation was devised off which tests could be run. It was decided that since the aim was simply to test implementations one by one the simplest possible situation could be used. The parameters of the situation were defined to be a robot contained in a square room, of dimensions 20 by 20 units, with the origin of the map frame defined to be in the bottom left corner. The robot has a set of sensors, including odometry, and a simple range finder pointing in four directions orthogonal to each other, measuring the distance to the walls in the directions of up, down, left and right. 
@@ -394,7 +393,7 @@ Unfortunately, the internal models by which the Kalman Filters and the Particle 
 
 Each filter was written up in Matlab and processed the same set of data. The ability for the filter to remove the simulated noise was the key metric used in comparing the algorithms.
 
-\subsubsection{The Kalman Filter and Extended Kalman Filter}
+\subsection{The Kalman Filter and Extended Kalman Filter}
 As mentioned in section ~\ref{sec:kalfilter}, one of the primary pitfalls of using a simple Kalman Filter in robotics algorithms is the fact that the measurement and movement models are linear functions. This restriction severely limits the type of information which can be incorporated into the filter.
 
 As a result, the Kalman filter implementation focused only on a limited subset of the inputs due to the requirement that the models be linear. Specifically, the implementation focused only on synthesizing the acceleration data ($a_x, a_y$), and two of the range finder measurements($d, l$), those pointing down and to the left. These measurements, you will note, translate directly into the position of the robot, assuming the coordinate system has its origins located at the bottom left of the map. The pose of the robot was represented by position and velocity ($x, y, v_x, v_y$).
@@ -455,7 +454,7 @@ H = \left[ \begin{array}{cc}
 
 Given that the uncertainties are the same as those for the Kalman Filter, we have enough information to apply the Extended Kalman Filter algorithm.
 
-\subsubsection{Particle Filter}
+\subsection{Particle Filter}
 The definition of the particle differs from that of the Kalman filter in a number of key areas. First off, the particle filter aims to solve the Global Localization problem, as opposed to the Tracking problem that the Kalman filter algorithm presented above attempted to solve. As before, the same situations were used, including the same measurement uncertainties, which led to a simple implementation based trivially around the sensor inputs.
 
 The state change probability was sampled around a distribution defined by:
@@ -487,7 +486,7 @@ The metric used to determine the accuracy of the obtained results was the RMSE (
 % Discuss Kidnapped Robot Problem Implementation.
 % Discuss SLAM Implementation
 
-\section{Results}
+\subsection{Results}
 % Diagram of Kalman, EKF. Diagram RMSE.
 The results of running the Kalman filter on the situation set out above are shown in figure ~\ref{fig:rkalman}. Each point has error bars corresponding to a standard deviation, as calculated by the filter.
 
@@ -562,6 +561,7 @@ Given that information, the RMSE is also calculated for the system. Given that t
 % Results of Kidnapped Robot.
 % Results of FastSLAM
 
+\section{Experiment 2}
 \section{Discussion}
 
 Bayes Filter (Algorithm \ref{alg:bayes}) provides a mathematical algorithm for calculating $bel(x_t)$; however, in general, it is not Turing-computable or is otherwise impractical \cite{probrob}. By assuming $x_t$ may be represented by a Gaussian distribution and that state transitions are linear, the Kalman Filter provides a practical implementation of the Bayes Filter. Furthermore, by representing the belief distribution as a set of state samples which can be individually updated, the Particle Filter provides an alternate practical implementation of Bayes. Both of these algorithms, in general, run in a much shorter amount of time.
