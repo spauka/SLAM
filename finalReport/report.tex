@@ -257,6 +257,37 @@ When a control command is sent, the motors and actuators attempt to carry it out
 
 The primary form of measurement examined was a laser rangefinder. While lasers have a high degree of accuracy, there is nonetheless noise, both from the sensor itself and from spurious measurements. Furthermore, laser rangefinders have a maximum range, though in some cases this may safely be ignored. A commonly used measurement model accounts for three classes of events: a valid hit, a spurious short measurement and a maximum range measurement.
 
+The most general localization problems, such as the kidnapped robot problem, require a degree of robustness not found in the basic particle filter presented previously. The first issue is that if there are no particles in the vicinty of the actual state, in most cases the correct state will not be found and the particles will instead gravitate towards alternate hypotheses. A solution is to incorporate random generation of particles dependent on the average measurement weight.
+
+\begin{algorithm}
+\caption{The Augmented Particle Filter}
+\label{alg:augmented_particle}
+\begin{algorithmic}
+	\REQUIRE $\chi_{t-1}, u_t, z_t$
+        \STATE $\bar{\chi}_t = \chi_t = \emptyset$
+        \FOR {$m \leftarrow 1$ to $M$}
+        \STATE sample $x^{[m]}_t \sim p(x_t \mid u_t,x^{[m]}_{t-1})$
+        \STATE $w^{[m]}_t \leftarrow p(z_t \mid x^{[m]}_t)$
+        \STATE Add $\left\langle x^{[m]}_t, w^{[m]}_t \right\rangle$ to $\bar{\chi}_t$
+        \STATE $w_{\mathrm{avg}} = w_{\mathrm{avg}} + \frac{w^{[m]}_t}{M}$
+        \ENDFOR
+
+        \STATE $w_{\mathrm{slow}} = w_{\mathrm{slow}} + \alpha_{\mathrm{slow}} (w_{\mathrm{avg}} - w_{\mathrm{slow}})$
+        \STATE $w_{\mathrm{fast}} = w_{\mathrm{fast}} + \alpha_{\mathrm{fast}} (w_{\mathrm{avg}} - w_{\mathrm{fast}})$
+        \FOR {$m = 1$ to $M$}
+        \STATE Draw p uniformly from $[0,1]$
+        \IF{$p \leq 1 - w_{\mathrm{fast}}/w_{\mathrm{slow}}$}
+          \STATE Add random pose to $\chi_t$
+          \ELSE
+          \STATE Select an index $i \in [1,m]$ with probability $\propto w^{[i]}_t$
+          \STATE Add $\left\langle x^{[i]}_t \right\rangle$ to $\chi_t$
+        \ENDIF
+
+        \ENDFOR
+
+\end{algorithmic}
+\end{algorithm}
+
 
 
 
@@ -656,7 +687,7 @@ From figure \ref{fig:ex2setup}, it can be ssen that the enivronment is highly sy
 \subsection{Results}
 The particle distribution at select times is shown to demonstrate the effectiveness of the localisation with no prior knowledge of the robot's pose (i.e kidnapped robot problem). The displayed `particles' are histogram bins representing clusters of particles. The bins are coloured based on the proportion of all particles are in the bin, with green signifying less than 5\%, blue approximately 10\% to 30\% and red 60\% and upwards. The displayed state (i.e pose) for each bin is the mean of the constituent poses of the particles within the bin.
 
-Figures \ref{fig:exp2diags1} through \ref{fig:exp2diags4} shows a selection of the particle sets in a single run through of the algorithm under the kidnapped robot conditions. At t=0.2, t is apparent that the correct hypothesis was not generated in the initial set. Based on figure \ref{fig:ex2setup}, it can be seen that the given particles produce measurements consistent with the true pose. Several of the particles are eliminated in the next movement step, but when the robot observes the corridor, the low particle weights cause a large number of random particles to be sampled. This produces a number of candidate hypotheses at t=0.5, which are resolved into two hypotheses by t=0.7. Eventually, only the correct hypotheses remains; at this point the problem becomes a straightforward particle filter and the remaining figures demonstrate its effectiveness at determining the robot's pose.
+Figures \ref{fig:exp2diags1} through \ref{fig:exp2diags4} shows a selection of the particle sets in a single run through of the algorithm under the kidnapped robot conditions. At t=0.2, t is apparent that the correct hypothesis was not generated in the initial set. Based on figure \ref{fig:ex2setup}, it can be seen that the given particles produce measurements consistent with the true pose. Several of the particles are eliminated in the next movement step, but when the robot observes the corridor, the low particle weights cause a large number of random particles to be sampled. This produces a number of candidate hypotheses at t=0.5, which are resolved into two hypotheses by t=0.7. Eventually, only the correct hypothesis remains; at this point the problem becomes a straightforward particle filter and the remaining figures demonstrate its effectiveness at determining the robot's pose.
 
 This can be observed quantitatively in figure \ref{fig:ex2res3}; notably the rapid decrease in RMSE as soon as the correct hypothesis was resolved. This also demonstrates the effectiveness of the KLD sampling in adjusting the number of particles as required.
 
