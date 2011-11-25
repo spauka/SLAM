@@ -487,6 +487,16 @@ The metric used to determine the accuracy of the obtained results was the RMSE (
 \mathrm{RMSE}(x, x_a) = \sqrt{\frac{\sum^n_{i=1} \left(x_i - x_{a,i}\right)^2}{n}}
 \end{equation}
 
+\subsection{SLAM}
+The final section of the first experiment deals with combining the results of all previous algorithms into attempting to solve the SLAM problem, which as mentioned previously is amongst the most difficult to solve. As previously, the upcoming examination of various SLAM algorithms deals primarily in algorithms derived from the FastSLAM algorithm.
+
+In it's raw form, the FastSLAM algorithm is computationally quite expensive, as well as memory intensive, particularly when dealing with occupancy grid representations of maps. There have therefore been several revised algorithms which aim to make the task of actually computing a map more efficient.
+
+The gmapping algorithm makes a number of optimizations to the basic FastSLAM algorithm, however fundamentally the structure of the two approaches remains the same~\cite{gmapping}.
+
+The DP-SLAM algorithm attempts to improve the internal representation of the map by using common ancestry to create a tree structure, which reduces the computational cost as well as the memory cost of creating large maps.
+
+In order to generate the data, a run containing multiple loop closures was run on a robot, using a SICK laser scanner. The motion model and kinematics for the robot had been predefined, hence the algorithms only had to deal with the odometry data and laser scan data to construct the output map.
 % Discuss Kidnapped Robot Problem Implementation.
 % Discuss SLAM Implementation
 
