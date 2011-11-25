@@ -122,12 +122,20 @@ class Pose:
     return ",".join(list(map(str,[self.x,self.y,self.th])))
   def __repr__(self):
     return self.__str__()
+  def err(self, X):
+    dx = X.x - self.x
+    dy = X.y - self.y
+    return dx*dx + dy*dy
 
   def ray(self):
     r = array([cos(self.th),sin(self.th)])
     X = array([self.x,self.y])
     return (X,r)
-
+  def diff(self,X):
+    dx = x - X.x
+    dy = y - X.y
+    return dx*dx + dy*dy
+	  
   def plot(self,plt):
     plt.plot(self.x,self.y,'or')
     d = 0.1

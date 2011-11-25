@@ -253,7 +253,10 @@ When a control command is sent, the motors and actuators attempt to carry it out
 \end{algorithmic}
 \end{algorithm}
 
-The primary form of measurement examined was a laser rangefinder. While lasers have a high degree of accuracy, there is nonetheless noise, both from the sensor itself and from spurious measurements. Furthermore, laser rangefinders have a maximum range, though in some cases this may safely be ignored. 
+The primary form of measurement examined was a laser rangefinder. While lasers have a high degree of accuracy, there is nonetheless noise, both from the sensor itself and from spurious measurements. Furthermore, laser rangefinders have a maximum range, though in some cases this may safely be ignored. A commonly used measurement model accounts for three classes of events: a valid hit, a spurious short measurement and a maximum range measurement.
+
+
+
 
 \subsection{The SLAM Problem}
 Having defined a number of algorithms for performing filtering and localization, we would now like to combine all the previous information into a statistical method for constructing a map. Given that we know that both position information and scan information is uncertain, we would like to some how construct a map which combines the uncertainties of all control and sensor measurements to create a statistically most likely map.
