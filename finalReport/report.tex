@@ -85,7 +85,7 @@ The Bayes Filter is an algorithm used to calculate the belief $bel(x_t)$. It is 
 \end{algorithmic}
 \end{algorithm}
 
-However, this algorithm is intractable in all but the simplest of scenarios, requiring a sum over the entire state space for all $x_t$. For continuous random variables, this is accomplished via an integral which in general, does not necessarily have an analytic solution. For finite state spaces, this is accomplished via a summation over the state space, which may, too be impractically computationally expensive. On the other hand, the normalisation of the measurement update $\eta$ is easily calculated as a summation over the unnormalised posterior, as the posterior is calculated for all $x_t$.
+However, this algorithm is intractable in all but the simplest of scenarios, requiring a sum over the entire state space for all $x_t$. For continuous random variables, this is accomplished via an integral which in general, does not necessarily have an analytic solution. For finite state spaces, this is accomplished via a summation over the state space, which may, too be impractically computationally expensive. On the other hand, the normalisation of the measurement update $\eta$ is easily calculated as a summation over the unnormalized posterior, as the posterior is calculated for all $x_t$.
 
 It is, however, possible to simplify or approximate the algorithm given certain restrictions on the input. Both the Kalman and Particle Filters provide practical implementations of the Bayes Filter by making suitable assumptions or approximations.
 
@@ -208,14 +208,14 @@ It can be shown through induction on Bayes' Rule that $bel(x_{0:t})$ can be give
 \end{align}
 Following this algorithm, asymptotically $\underset{M \to \infty}{\lim} x^{[i]}_t \sim p(x_t \mid z_{1:t}, u_{1:t})$.
 
-Generally speaking, while the particle set itself represents the posterior $p(x_t \mid z_{1:t}, u_{1:t})$, for many purposes such as planning, it is desirable to produce a state estimation in a more useful form. The simplest such method builds a discrete histogram over the state space, with the occupancy of each bin approximating the posterior density at its position. Alternatively, a Gaussian approximation could provide an effective maximum likelihood representation if the posterior is unimodal. In the case of multimodal posteriors, k-means clustering may be used to provide a multimodal approximation as a mixture of multiple Gaussians\cite{probrob}.
+Generally speaking, while the particle set itself represents the posterior $p(x_t \mid z_{1:t}, u_{1:t})$, for many purposes such as planning, it is desirable to produce a state estimation in a more useful form. The simplest such method builds a discrete histogram over the state space, with the occupancy of each bin approximating the posterior density at its position. Alternatively, a Gaussian approximation could provide an effective maximum likelihood representation if the posterior is unimodal. In the case of multi-modal posteriors, k-means clustering may be used to provide a multi-modal approximation as a mixture of multiple Gaussians\cite{probrob}.
 \subsection{Localization}
 We will now leverage the kalman and particle filters to solve the localization problem. The first assumption in this problem is that a map or set of known features is available. This map could be created through other means, such as survey equipment, aerial photos, or another robot having mapped the environment through SLAM. Secondly, models must be available to produce the functions specified in algorithms \ref{alg:particle} and \ref{alg:kalman}. Which models are required and the form of the models is dependent on the problem; for example, the EKF requires that the Jacobian of the functions be readily available.
 
 In most localization problems, two distinct types of models are required: a model representing the kinematics of the robot and models representing the various sensor measurements. 
 
 For simplicity, only the kinematic problem of a robot in the plane was examined. In this case, the pose of the robot is represented by the vector $x_t = (x,y,\theta)^T$. There are two distinct motion models that can now be used, the velocity and odometry models.
-The velocity model assumes that a control instruction $u_t = (v_t, \omega_t)^T$ consists of a forward velocity $v_t$ and a rotational velocity $\omega_t$. The path of the robot within a single timestep can then be described by an arc of a circle with uncertainty in the  velocity, angular veloctity and final orientation \cite{probrob}. Note that the function $\textrm{sample}(\sigma)$ samples from a zero---centered distribution with standard deviation $\sigma$. Also, this model has coefficients $\alpha_{1\rightarrow 6}$ relating the uncertainty to both the angular and forwards velocity; in practice, turning can be a significant source of noise due to effects such as slipping of the wheels.
+The velocity model assumes that a control instruction $u_t = (v_t, \omega_t)^T$ consists of a forward velocity $v_t$ and a rotational velocity $\omega_t$. The path of the robot within a single time step can then be described by an arc of a circle with uncertainty in the  velocity, angular velocity and final orientation \cite{probrob}. Note that the function $\textrm{sample}(\sigma)$ samples from a zero---centered distribution with standard deviation $\sigma$. Also, this model has coefficients $\alpha_{1\rightarrow 6}$ relating the uncertainty to both the angular and forwards velocity; in practice, turning can be a significant source of noise due to effects such as slipping of the wheels.
 
 \begin{algorithm}
 \caption{Velocity Motion Model}
@@ -495,6 +495,8 @@ The root mean squared errors of the calculation are given in table ~\ref{tbl:rka
 
 The results of running the EKF on the same set of data are given in figure ~\ref{fig:rekf}. Again, each point has an error bar corresponding to a standard deviation. In this case, there are only $8$ points lying outside the error bars, suggesting that the error is slightly overestimated.
 
+In addition to running the algorithm, figures ~\ref{fig:xxbar} and ~\ref{fig:yybar} give a comparison of taking cumulative values based on raw measurements (green line) and that of running the EKF (pink line, with blue error bars). The key features to note of this diagram is the accumulation of a large error margin on raw measurements and a substantial drift from the actual value along the green line.
+
 \begin{figure}[htp]
 \label{fig:rkalman}
 \centering
@@ -523,6 +525,38 @@ $y$ & 0.0161 & 0.0149 \\
 \end{center}
 \caption{RMSE of the Kalman Filter Compared to that of the Extended Kalman Filter}
 \end{table}
+
+\begin{figure}[htp]
+\label{fig:xxbar}
+\centering
+ \includegraphics[width=0.75\textwidth]{images/xxbar.png}
+\caption{Comparison of running an EKF and simply taking naive measurements on raw data on the X axis}
+\end{figure}
+
+\begin{figure}[htp]
+\label{fig:yybar}
+\centering
+ \includegraphics[width=0.75\textwidth]{images/yybar.png}
+\caption{Comparison of running an EKF and simply taking naive measurements on raw data on the Y axis}
+\end{figure}
+
+The results of performing global localization using a particle filter are also given below. The diagram showing the median location of particles per update is given in figure ~\ref{fig:particle}. The green circles represent the expected location, while the blue circles represents the actual location of the median of the particles.
+
+Given that information, the RMSE is also calculated for the system. Given that the algorithm has an inherent random factor, the algorithm was run multiple times and the average value of the RMSE was taken at each point in time. To generate the averages, the algorithm was run 1000 times, with the error being defined as the standard deviation over the iterations. This is shown in figure ~\ref{fig:rmseparticle}. 
+
+\begin{figure}[htp]
+\label{fig:particle}
+\centering
+ \includegraphics[width=0.8\textwidth]{images/particlefilter.png}
+\caption{A sample of 6 runs of the particle filter, showing the random behavior over multiple runs}
+\end{figure}
+
+\begin{figure}[htp]
+\label{fig:rmseparticle}
+\centering
+ \includegraphics[width=0.8\textwidth]{images/particlefilterRMSE.png}
+\caption{RMSE of Particle Filter, showing decrease as localization occurs}
+\end{figure}
 
 % Diagram of Particle Filter. Diagram RMSE.
 % Results of Kidnapped Robot.
