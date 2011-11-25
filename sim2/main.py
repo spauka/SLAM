@@ -235,16 +235,7 @@ def p_rgb(p):
   r = p * 255 
   #print("r",r,"g",g,"b",b)
   return "#%.2X%.2X%.2X" % (r,g,b)
-def test_p_rgb():
-  P = [x/300.0 for x in list(range(0,300))]
-  plt.ion()
-  plt.show()
-  for p in P:
-    col = p_rgb(p)
-    plt.plot([p,p],[0,1],"-",color=col)
-    plt.draw()
-  plt.ioff()
-  plt.show()
+
 def test_measurement_prob():
   env = makeEnviron2()
   env.plot(plt)
@@ -306,7 +297,21 @@ def test_measurement_prob_3():
   pp.savefig()
   pp.close()
 
-
+def test_p_rgb():
+  P = [x/1000.0 for x in list(range(0,1000))]
+  pp = PdfPages("prgb.pdf")
+  plt.ion()
+  plt.show()
+  plt.figure(0)
+  for p in P:
+    col = p_rgb(p)
+    plt.plot([p,p],[0,1],"-",color=col)
+    plt.draw()
+  pp.savefig()
+  pp.close()
+  plt.ioff()
+  plt.show()
+  
 def test_KLD(epsilon,z_delta):
   k = list(range(2,10000))
   M = map(lambda k: ((k-1)/(2*epsilon)) * (1 - 2/(9*(k-1)) + sqrt(2/(9*(k-1)))*z_delta)**3, k)
