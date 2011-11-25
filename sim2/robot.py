@@ -137,11 +137,11 @@ class Pose:
     return dx*dx + dy*dy
 	  
   def plot(self,plt):
-    plt.plot(self.x,self.y,'or')
-    d = 0.1
+    plt.plot(self.x,self.y,'ow')
+    d = 0.2
     X = self.x + d*cos(self.th)
     Y = self.y + d*sin(self.th)
-    plt.plot([self.x,X],[self.y,Y],'-r')
+    plt.plot([self.x,X],[self.y,Y],'-k')
     
 def plot_weighted_pose(plt,f,X,w):
   plt.plot(X.x,X.y,'.',color=f(w))
@@ -212,7 +212,7 @@ class Robot_Sim:
     return str(self)
 
   def plot(self,plt):    
-    self.Z.plot(plt,self.x)
+    #self.Z.plot(plt,self.x)
     self.x.plot(plt)
     #plt.plot([self.prev_x.x,self.x.x],[self.prev_x.y,self.x.y],'k--')
 

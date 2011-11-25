@@ -6,8 +6,10 @@ from robot import *
 from mcl import *
 #Plotting requires matplotlib.
 import matplotlib
-import matplotlib.backends.backend_pdf
+from matplotlib.backends.backend_pdf import PdfPages
 import sys
+import os
+
 matplotlib.use('GTKAgg') #Feel free to change the backend
 #['ps', 'Qt4Agg', 'GTK', 'GTKAgg', 'svg', 'agg', 'cairo', 'MacOSX', 'GTKCairo', 'WXAgg', 'TkAgg', 'QtAgg', 'FltkAgg', 'pdf', 'CocoaAgg', 'emf', 'gdk', 'template', 'WX']
 import matplotlib.pyplot as plt
@@ -296,8 +298,10 @@ def test_KLD(epsilon,z_delta):
   plt.show()
 
 
-def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Measurement_Model(measure_count=12,fov=2 * pi,sd_hit=0.02),part_meas=Robot_Measurement_Model(measure_count=12,fov= 2* pi,sd_hit=0.2),KLD=True,n=200,kidnapped=False,filename="out.dat",delta=0.10,quant=1.6):
-  f = open(filename,'w')
+def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Measurement_Model(measure_count=6,fov=pi/3,sd_hit=0.02),part_meas=Robot_Measurement_Model(measure_count=6,fov= pi/3,sd_hit=0.2),KLD=True,n=200,kidnapped=False,filename="out",epsilon=0.5,quant=1.65):
+  if not os.path.exists(filename):
+    os.makedirs(filename)
+  f = open(filename + "/data.dat",'w')
   start_pose = Pose(path[0][0],path[0][1],atan2(path[1][1]-path[0][1],path[1][0]-path[0][0]))
 
   r = Robot_Sim(env,mot,Robot_Odometry_Model(),meas,start_pose)
@@ -325,25 +329,36 @@ def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Meas
     P_new = P_prev.sample_mov(u_command,driver.dt)
     #P_new.P.append(Particle(env,mot,meas,r.x)) #(Cheat mode)
     if KLD:
-      P_resampled = P_new.KLD_resample(Z,delta,quant)
+      P_resampled = P_new.KLD_resample(Z,epsilon,quant)
     else:
       P_resampled = P_new.resample(Z)
     #P.append(P_resampled)
-    P_prev = P_new
-    print "rmse:", P_new.rmse(r.x)
+    P_prev = P_resampled
+    err = P_new.rmse(r.x)
     i = i+1
     
     plt.figure(0)
     plt.clf()
     env.plot(plt)
     r.plot(plt)
-    save(f,r.x,r.Z,P_new.plot(plt,p_rgb))
+
+    (count,out) = P_new.plot2(plt,p_rgb)
+    datstr = "\t".join(map(str,[r.t,count,err])) + "\n"
+    print datstr
+    f.write(datstr)
+
     plt.draw()
+
+    pp = PdfPages(filename + "/" + str(r.t) + ".pdf")
+    pp.savefig()
+    pp.close()
+
     plt.figure(1)
     plt.clf()
     plt.hist(P_new.W,bins=20)
     plt.draw()
     
+    print "rmse:", err
   f.close()
   plt.ioff()
   plt.show()
