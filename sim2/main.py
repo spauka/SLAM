@@ -305,7 +305,7 @@ def test_p_rgb():
   plt.figure(0)
   for p in P:
     col = p_rgb(p)
-    plt.plot([p,p],[0,1],"-",color=col)
+    plt.plot([p,p],[0,0.2],"-",color=col)
     plt.draw()
   pp.savefig()
   pp.close()
@@ -377,6 +377,8 @@ def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Meas
     pp.savefig()
     pp.close()
 
+    plt.figure(0).savefig("%s/%03d.png"%(filename,i))
+
     plt.figure(1)
     plt.clf()
     plt.hist(P_new.W,bins=20)
@@ -386,6 +388,7 @@ def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Meas
   f.close()
   plt.ioff()
   plt.show()
+  os.system("mencoder 'mf://%s/*.png' -mf type=png:fps=1 -ovc lavc -lavcopts vcodec=wmv2 -oac copy -o animation.mpg"%filename)
 
 def save(f,x,Z,P):
   s = ";".join([str(x),str(Z)]+[str(x) + ":" + str(w) for (x,w) in P]) + "\n"

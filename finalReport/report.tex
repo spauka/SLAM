@@ -561,14 +561,19 @@ Given that information, the RMSE is also calculated for the system. Given that t
 % Results of Kidnapped Robot.
 % Results of FastSLAM
 
+\pagebreak
 \section{Experiment 2}
 While the first experiment provided a basic comparison of filters such as the EKF and particle filter, it was in a contrived situation significantly simpler than realistic physical localization problems. A new scenario was devised, with a simulated environment filled with arbitrary objects in which a robot would move around semi---randomly with realistic, probabilistic movement, odometry and sensor models. The environment, laser rangefinder and initial pose are shown in figure \ref{fig:ex2setup}. The rangefinder consisted of 6 beams with a field of view of $60^{\circ}$ and a simpler version of the beam sensor model described in \ref{Localization} (Algorithm \ref{alg:ex2measurement}). The sensor model for a hit was taken to be a gaussian with $\sigma = 0.2$.
 
 A driver module with knowledge of the simulated robot's true pose attempted to drive the robot around the environment with the velocity commands fed into a velocity movement model (Algorithm \ref{alg:velocity_model}, Table \ref{tbl:velparam}). As the driver and localisation modules were entirely separate, rather than inverting the odometry model described earlier, the velocity commands were taken as odometry readings.
 
-The localization algorithm used was \emph{Augmented MCL} incorporating \emph{KLD---Sampling}. For the KLD---Sampling, $\epsilon$ was set to 0.1 and $\delta$ to 1.65, corresponding to a confidence interval of 95\% in the produced distribution. 
+The localization algorithm used was \emph{Augmented MCL} incorporating \emph{KLD---Sampling}. For the KLD---Sampling, $\epsilon$ was set to 0.1 and $\delta$ to 1.65, theoretically corresponding to a confidence interval of 95\% in the produced distribution. 
 
-The enivronment was highly symmetric, producing ambiguous sensor measurements. An initial problem was found that the distibution collapsed too easily to a single hypothesis. This could be remedied by changing the parameters of the KLD sampler, but produced too great a performance cost. Limiting the number of particles to a minimum of around 100 largely resolved this issue.
+In all cases, the set of particles was initialised by randoming selecting 10000 feasible candidate particles.
+
+From figure \ref{fig:ex2setup}, it can be ssen that the enivronment is highly symmetric, resulting in a tendancy to produce ambigious measurements and multiple candidate hypotheses. Although this degree of symmetry is unlikely to occur in An initial problem was found that the distibution collapsed too easily to a single hypothesis. This could be remedied by changing the parameters of the KLD sampler so that more particles were used, but this tended to produce too great a performance cost. Programming a lower bound of the number of particles of 100 partially resolved this issue.
+
+
 
 \begin{algorithm}
 \caption{Simple Beam Measurement Model}
@@ -610,6 +615,12 @@ $\alpha_1$ & $\alpha_2$ & $\alpha_3$ & $\alpha_4$ & $\alpha_5$ & $\alpha_6$ \\
 \subsection{Results}
 The particle distribution at select times is shown to demonstrate the effectiveness of the localisation with no prior knowledge of the robot's pose (i.e kidnapped robot problem). The displayed `particles' are histogram bins representing clusters of particles. The bins are coloured based on the proportion of all particles are in the bin, with green signifying less than 5\%, blue approximately 10\% to 30\% and red 60\% and upwards. The displayed state (i.e pose) for each bin is the mean of the constituent poses of the particles within the bin.
 
+Figures \ref{fig:exp2diag1} through \ref{fig:exp2diags4} shows a selection of the particle sets in a single run through of the algorithm under the kidnapped robot conditions. At t=0.2, t is apparent that the correct hypothesis was not generated in the initial set. Based on figure \ref{fig:ex2setup}, it can be seen that the given particles produce measurements consistent with the true pose. Several of the particles are eliminated in the next movement step, but when the robot observes the corridor, the low particle weights cause a large number of random particles to be sampled. This produces a number of candidate hypotheses at t=0.5, which are resolved into two hypotheses by t=0.7. Eventually, only the correct hypotheses remains; at this point the problem becomes a straightforward particle filter and the remaining figures demonstrate its effectiveness at determining the robot's pose.
+
+This can be observed quantitatively in figure \ref{fig:ex2res3}; notably the rapid decrease in RMSE as soon as the correct hypothesis was resolved. This also demonstrates the effectiveness of the KLD sampling in adjusting the number of particles as required.
+
+Two other runs of the simulation are shown in figures \ref{fig:ex2res4} and \ref{fig:ex2res5}. Notably in figure \ref{fig:ex2res4}, the correct hypothesis was represented in the inital particle set; consequently, only a relative few particles were required, as opposed to the other two runs.
+
 \begin{figure}
   \centering
   \subfloat[t=0.2]{\label{fig:02}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/0_2.pdf}}
@@ -618,6 +629,7 @@ The particle distribution at select times is shown to demonstrate the effectiven
   \subfloat[t=0.5]{\label{fig:05}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/0_5.pdf}}\\
   \subfloat[t=0.6]{\label{fig:06}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/0_6.pdf}}
   \subfloat[t=0.7]{\label{fig:07}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/0_7.pdf}}\\
+  \label{fig:exp2diags1}
   \caption{Results from the second experiment from t=0.2 to t=0.7}
 \end{figure}
 \begin{figure}
@@ -628,6 +640,7 @@ The particle distribution at select times is shown to demonstrate the effectiven
   \subfloat[t=1.1]{\label{fig:11}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/1_1.pdf}}\\
   \subfloat[t=1.2]{\label{fig:12}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/1_2.pdf}}
   \subfloat[t=1.3]{\label{fig:13}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/1_3.pdf}}\\
+  \label{fig:exp2diags2}
   \caption{Results from the second experiment from t=0.8 to t=1.3}
 \end{figure}
 \begin{figure}
@@ -638,6 +651,7 @@ The particle distribution at select times is shown to demonstrate the effectiven
   \subfloat[t=5.0]{\label{fig:50}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/5_0.pdf}}\\
   \subfloat[t=6.0]{\label{fig:60}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/6_0.pdf}}
   \subfloat[t=7.0]{\label{fig:70}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/7_0.pdf}}\\
+  \label{fig:exp2diags3}
   \caption{Selected results from the second experiment from t=2.0 to t=7.0}
 \end{figure}
 \begin{figure}
@@ -647,6 +661,7 @@ The particle distribution at select times is shown to demonstrate the effectiven
   \subfloat[t=10.0]{\label{fig:10}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/10_0.pdf}}
   \subfloat[t=11.0]{\label{fig:110}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/11_0.pdf}}\\
   \subfloat[t=12.0]{\label{fig:120}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/12_0.pdf}}
+  \label{fig:exp2diags4}
   \caption{Selected results from the second experiment from t=8.0 to t=7.0}
 \end{figure}
 
@@ -668,7 +683,7 @@ The particle distribution at select times is shown to demonstrate the effectiven
  \includegraphics[width=0.8\textwidth]{images/experiment2/res5_rmse_particles}
 \caption{RMSE and particle count for the third run of the second experiment}
 \end{figure}
-
+\pagebreak
 \section{Discussion}
 
 Bayes Filter (Algorithm \ref{alg:bayes}) provides a mathematical algorithm for calculating $bel(x_t)$; however, in general, it is not Turing-computable or is otherwise impractical \cite{probrob}. By assuming $x_t$ may be represented by a Gaussian distribution and that state transitions are linear, the Kalman Filter provides a practical implementation of the Bayes Filter. Furthermore, by representing the belief distribution as a set of state samples which can be individually updated, the Particle Filter provides an alternate practical implementation of Bayes. Both of these algorithms, in general, run in a much shorter amount of time.
