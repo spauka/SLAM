@@ -125,7 +125,8 @@ class Pose:
   def err(self, X):
     dx = X.x - self.x
     dy = X.y - self.y
-    return dx*dx + dy*dy
+    dth = X.th - self.th
+    return dx*dx + dy*dy + dth*dth
 
   def ray(self):
     r = array([cos(self.th),sin(self.th)])
@@ -211,8 +212,9 @@ class Robot_Sim:
   def __repr__(self):
     return str(self)
 
-  def plot(self,plt):    
-    #self.Z.plot(plt,self.x)
+  def plot(self,plt,showZ=False):    
+    if showZ:
+      self.Z.plot(plt,self.x)
     self.x.plot(plt)
     #plt.plot([self.prev_x.x,self.x.x],[self.prev_x.y,self.x.y],'k--')
 

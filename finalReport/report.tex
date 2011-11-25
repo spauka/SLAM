@@ -562,6 +562,53 @@ Given that information, the RMSE is also calculated for the system. Given that t
 % Results of FastSLAM
 
 \section{Experiment 2}
+While the first experiment provided a basic comparison of filters such as the EKF and particle filter, it was in a contrived situation significantly simpler than realistic physical localization problems. A new scenario was devised, with a simulated environment filled with arbitrary objects in which a robot would move around semi---randomly with realistic, probabilistic movement, odometry and sensor models. The environment, laser rangefinder and initial pose are shown in figure \ref{fig:ex2setup}. The rangefinder consisted of 6 beams with a field of view of $60^{\circ}$ and a simpler version of the beam sensor model described in \ref{Localization} (Algorithm \ref{alg:ex2measurement}). The sensor model for a hit was taken to be a gaussian with $\sigma = 0.2$.
+
+A driver module with knowledge of the simulated robot's true pose attempted to drive the robot around the environment with the velocity commands fed into a velocity movement model (Algorithm \ref{alg:velocity_model}, Table \ref{tbl:velparam}). As the driver and localisation modules were entirely separate, rather than inverting the odometry model described earlier, the velocity commands were taken as odometry readings.
+
+The localization algorithm used was \emph{Augmented MCL} incorporating \emph{KLD---Sampling}. For the KLD---Sampling, $\epsilon$ was set to 0.1 and $\delta$ to 1.65, corresponding to a confidence interval of 95\% in the produced distribution. 
+
+The enivronment was highly symmetric, producing ambiguous sensor measurements. An initial problem was found that the distibution collapsed too easily to a single hypothesis. This could be remedied by changing the parameters of the KLD sampler, but produced too great a performance cost. Limiting the number of particles to a minimum of around 100 largely resolved this issue.
+
+\begin{algorithm}
+\caption{Simple Beam Measurement Model}
+\label{alg:ex2measurement}
+\begin{algorithmic}
+	\REQUIRE $z_t, x_t, m$
+	\STATE $q = 1$
+	\FOR {$k \leftarrow 1$ to $K$}
+        \STATE Ray cast to find the range
+        \STATE $p = z_{\textrm{hit}} p_{\textrm{hit}}(z_t^k \mid x_t, m) + (1 - z_{\textrm{hit}}) p_{\textrm{miss}}(z_t^k \mid x_t, m)$
+        \STATE $q = q p$
+	\ENDFOR
+	\RETURN $q$
+\end{algorithmic}
+\end{algorithm}
+
+
+\begin{figure}[htp]
+\label{fig:ex2setup}
+\centering
+ \includegraphics[width=0.8\textwidth]{images/experiment2/measurement.pdf}
+\caption{The environment and sensor model of the second experiment.}
+\end{figure}
+
+\begin{table}[htp]
+\label{tbl:velparam}
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+$\alpha_1$ & $\alpha_2$ & $\alpha_3$ & $\alpha_4$ & $\alpha_5$ & $\alpha_6$ \\
+0.05 & 0.05 & 0.008 & 0.01 & 0.002 & 0.005\\
+\hline
+\end{tabular}
+\end{center}
+\caption{Velocity motion model parameters.}
+\end{table}
+
+
+\subsection{Results}
+
 \section{Discussion}
 
 Bayes Filter (Algorithm \ref{alg:bayes}) provides a mathematical algorithm for calculating $bel(x_t)$; however, in general, it is not Turing-computable or is otherwise impractical \cite{probrob}. By assuming $x_t$ may be represented by a Gaussian distribution and that state transitions are linear, the Kalman Filter provides a practical implementation of the Bayes Filter. Furthermore, by representing the belief distribution as a set of state samples which can be individually updated, the Particle Filter provides an alternate practical implementation of Bayes. Both of these algorithms, in general, run in a much shorter amount of time.
