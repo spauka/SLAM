@@ -360,11 +360,32 @@ Initially, our aim was to evaluate the usefulness and quality of the various for
 
 In order to do this, a simple situation was devised off which tests could be run. It was decided that since the aim was simply to test implementations one by one the simplest possible situation could be used. The parameters of the situation were defined to be a robot contained in a square room, of dimensions 20 by 20 units, with the origin of the map frame defined to be in the bottom left corner. The robot has a set of sensors, including odometry, and a simple range finder pointing in four directions orthogonal to each other, measuring the distance to the walls in the directions of up, down, left and right. 
 
-The robot is assumed to always have an orientation in the upwards direction, eliminating the consideration of orientation and thereby reducing the problem to two dimensions, x and y. Finally, the robot was assumed to move at a constant velocity after being given acceleration commands which would accelerate the robot by some magnitude in the x or y direction for one unit time. To mimic the behavior of sensors, noise was artificially added into the simulation by means of random Gaussian variables.
+The robot is assumed to always have an orientation in the upwards direction, eliminating the consideration of orientation and thereby reducing the problem to two dimensions, x and y. Finally, the robot was assumed to move at a constant velocity after being given acceleration commands which would accelerate the robot by some magnitude in the x or y direction for one unit time. The simulated acceleration is shown in figure ~\ref{fig:simac}, and the corresponding positions it creates are shown in figure ~\ref{fig:simmo}. To mimic the behavior of sensors, noise was artificially added into the simulation by means of random Gaussian variables. A sample of the laser output is given in figure ~\ref{fig:siml} which includes the expected values of the laser reading.
 
 The outputs of the system, namely the difference in position and the acceleration as well as the sensor readings, to which random Gaussian noise was added, were used as the inputs to the filter, which was then evaluated on its ability to remove the random noise by synthesis of the various variables to form a relatively noise free output which mirrors the actual position and velocity of the simulated robot.
 
 In this section, three different forms of filter were evaluated on the same model. These were the Kalman filter, the Extended Kalman filter and the Particle filter. These algorithms are based off the descriptions given in section \ref{sec:filtering}.
+
+\begin{figure}[htp]
+\label{fig:simmo}
+\centering
+ \includegraphics[width=0.75\textwidth]{images/simulatedmotion.png}
+\caption{Simulated Motion of Robot}
+\end{figure}
+
+\begin{figure}[htp]
+\label{fig:simac}
+\centering
+ \includegraphics[width=0.75\textwidth]{images/simulatedaccelleration.png}
+\caption{Simulated Acceleration of Robot}
+\end{figure}
+
+\begin{figure}[htp]
+\label{fig:siml}
+\centering
+ \includegraphics[width=0.75\textwidth]{images/simulatedlaser.png}
+\caption{Simulated Noisy Laser Readings}
+\end{figure}
 
 Unfortunately, the internal models by which the Kalman Filters and the Particle Filters are constructed precludes a direct comparison of the efficacy of the two algorithms in filtering data, as will be shown below. This means that any further discussion on the merits of one algorithm over the other will be purely based on the authors observations and previous research into the two classes of algorithm.
 
@@ -454,6 +475,11 @@ p(z_t) \sim \mathcal{N}(x_t, \mathrm{L\_DEV})
 \end{equation}
 
 The metric used to determine the accuracy of the obtained results was the RMSE (root mean square error) (eq. ~\ref{eq:rmse}) algorithm, which quantitatively describes the error of each pose estimate, and hence allows comparison of states. In order to counteract the random noise introduced by producing the particle filter representation, the error for each time step was determined as the average RMSE errors over multiple iterations of the algorithm. In our case the values were averaged over 100 iterations of the algorithm.
+
+\begin{equation}
+\label{eq:rmse}
+\mathrm{RMSE}(x, x_a) = \sqrt{\frac{\sum^n_{i=1} \left(x_i - x_{a,i}\right)^2}{n}}
+\end{equation}
 
 % Discuss Kidnapped Robot Problem Implementation.
 % Discuss SLAM Implementation
