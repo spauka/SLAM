@@ -1,7 +1,7 @@
 global M X_SIZE Y_SIZE V_MEAN V_DEV UP_DEV UA_DEV DELTA_T D_DEV A_DEV L_DEV
 
 % The number of particles
-M = 1000;
+M = 100;
 
 % We constrain the dimensions of the room to 20 by 20.
 X_SIZE = 20;
