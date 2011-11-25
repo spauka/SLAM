@@ -453,6 +453,8 @@ Since we know the laser measurements are distributed normally around (eq. \ref{e
 p(z_t) \sim \mathcal{N}(x_t, \mathrm{L\_DEV})
 \end{equation}
 
+The metric used to determine the accuracy of the obtained results was the RMSE (root mean square error) (eq. ~\ref{eq:rmse}) algorithm, which quantitatively describes the error of each pose estimate, and hence allows comparison of states. In order to counteract the random noise introduced by producing the particle filter representation, the error for each time step was determined as the average RMSE errors over multiple iterations of the algorithm. In our case the values were averaged over 100 iterations of the algorithm.
+
 % Discuss Kidnapped Robot Problem Implementation.
 % Discuss SLAM Implementation
 
