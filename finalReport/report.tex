@@ -18,7 +18,7 @@
 \usepackage{subfig}
 \usepackage{babel}
 \usepackage{float}
-
+\usepackage{subfig}
 \begin{document}
 
 \title{Statistical methods in perception and their application to the SLAM problem}
@@ -563,6 +563,113 @@ Given that information, the RMSE is also calculated for the system. Given that t
 % Results of FastSLAM
 
 \section{Experiment 2}
+While the first experiment provided a basic comparison of filters such as the EKF and particle filter, it was in a contrived situation significantly simpler than realistic physical localization problems. A new scenario was devised, with a simulated environment filled with arbitrary objects in which a robot would move around semi---randomly with realistic, probabilistic movement, odometry and sensor models. The environment, laser rangefinder and initial pose are shown in figure \ref{fig:ex2setup}. The rangefinder consisted of 6 beams with a field of view of $60^{\circ}$ and a simpler version of the beam sensor model described in \ref{Localization} (Algorithm \ref{alg:ex2measurement}). The sensor model for a hit was taken to be a gaussian with $\sigma = 0.2$.
+
+A driver module with knowledge of the simulated robot's true pose attempted to drive the robot around the environment with the velocity commands fed into a velocity movement model (Algorithm \ref{alg:velocity_model}, Table \ref{tbl:velparam}). As the driver and localisation modules were entirely separate, rather than inverting the odometry model described earlier, the velocity commands were taken as odometry readings.
+
+The localization algorithm used was \emph{Augmented MCL} incorporating \emph{KLD---Sampling}. For the KLD---Sampling, $\epsilon$ was set to 0.1 and $\delta$ to 1.65, corresponding to a confidence interval of 95\% in the produced distribution. 
+
+The enivronment was highly symmetric, producing ambiguous sensor measurements. An initial problem was found that the distibution collapsed too easily to a single hypothesis. This could be remedied by changing the parameters of the KLD sampler, but produced too great a performance cost. Limiting the number of particles to a minimum of around 100 largely resolved this issue.
+
+\begin{algorithm}
+\caption{Simple Beam Measurement Model}
+\label{alg:ex2measurement}
+\begin{algorithmic}
+	\REQUIRE $z_t, x_t, m$
+	\STATE $q = 1$
+	\FOR {$k \leftarrow 1$ to $K$}
+        \STATE Ray cast to find the range
+        \STATE $p = z_{\textrm{hit}} p_{\textrm{hit}}(z_t^k \mid x_t, m) + (1 - z_{\textrm{hit}}) p_{\textrm{miss}}(z_t^k \mid x_t, m)$
+        \STATE $q = q p$
+	\ENDFOR
+	\RETURN $q$
+\end{algorithmic}
+\end{algorithm}
+
+
+\begin{figure}[htp]
+\label{fig:ex2setup}
+\centering
+ \includegraphics[width=0.8\textwidth]{images/experiment2/measurement.pdf}
+\caption{The environment and sensor model of the second experiment.}
+\end{figure}
+
+\begin{table}[htp]
+\label{tbl:velparam}
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+$\alpha_1$ & $\alpha_2$ & $\alpha_3$ & $\alpha_4$ & $\alpha_5$ & $\alpha_6$ \\
+0.05 & 0.05 & 0.008 & 0.01 & 0.002 & 0.005\\
+\hline
+\end{tabular}
+\end{center}
+\caption{Velocity motion model parameters.}
+\end{table}
+
+
+\subsection{Results}
+The particle distribution at select times is shown to demonstrate the effectiveness of the localisation with no prior knowledge of the robot's pose (i.e kidnapped robot problem). The displayed `particles' are histogram bins representing clusters of particles. The bins are coloured based on the proportion of all particles are in the bin, with green signifying less than 5\%, blue approximately 10\% to 30\% and red 60\% and upwards. The displayed state (i.e pose) for each bin is the mean of the constituent poses of the particles within the bin.
+
+\begin{figure}
+  \centering
+  \subfloat[t=0.2]{\label{fig:02}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/0_2.pdf}}
+  \subfloat[t=0.3]{\label{fig:03}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/0_3.pdf}}\\
+  \subfloat[t=0.4]{\label{fig:04}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/0_4.pdf}}
+  \subfloat[t=0.5]{\label{fig:05}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/0_5.pdf}}\\
+  \subfloat[t=0.6]{\label{fig:06}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/0_6.pdf}}
+  \subfloat[t=0.7]{\label{fig:07}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/0_7.pdf}}\\
+  \caption{Results from the second experiment from t=0.2 to t=0.7}
+\end{figure}
+\begin{figure}
+  \centering
+  \subfloat[t=0.8]{\label{fig:08}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/0_8.pdf}}
+  \subfloat[t=0.9]{\label{fig:09}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/0_9.pdf}}\\
+  \subfloat[t=1.0]{\label{fig:10}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/1_0.pdf}}
+  \subfloat[t=1.1]{\label{fig:11}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/1_1.pdf}}\\
+  \subfloat[t=1.2]{\label{fig:12}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/1_2.pdf}}
+  \subfloat[t=1.3]{\label{fig:13}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/1_3.pdf}}\\
+  \caption{Results from the second experiment from t=0.8 to t=1.3}
+\end{figure}
+\begin{figure}
+  \centering
+  \subfloat[t=2.0]{\label{fig:20}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/2_0.pdf}}
+  \subfloat[t=3.0]{\label{fig:30}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/3_0.pdf}}\\
+  \subfloat[t=4.0]{\label{fig:40}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/4_0.pdf}}
+  \subfloat[t=5.0]{\label{fig:50}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/5_0.pdf}}\\
+  \subfloat[t=6.0]{\label{fig:60}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/6_0.pdf}}
+  \subfloat[t=7.0]{\label{fig:70}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/7_0.pdf}}\\
+  \caption{Selected results from the second experiment from t=2.0 to t=7.0}
+\end{figure}
+\begin{figure}
+  \centering
+  \subfloat[t=8.0]{\label{fig:80}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/8_0.pdf}}
+  \subfloat[t=9.0]{\label{fig:90}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/9_0.pdf}}\\
+  \subfloat[t=10.0]{\label{fig:10}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/10_0.pdf}}
+  \subfloat[t=11.0]{\label{fig:110}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/11_0.pdf}}\\
+  \subfloat[t=12.0]{\label{fig:120}\includegraphics[width=0.5\textwidth]{images/experiment2/res3/12_0.pdf}}
+  \caption{Selected results from the second experiment from t=8.0 to t=7.0}
+\end{figure}
+
+\begin{figure}[htp]
+\label{fig:ex2res3}
+\centering
+ \includegraphics[width=0.8\textwidth]{images/experiment2/res3/rmse_particles}
+\caption{RMSE and particle count for the first run of the second experiment}
+\end{figure}
+\begin{figure}[htp]
+\label{fig:ex2res4}
+\centering
+ \includegraphics[width=0.8\textwidth]{images/experiment2/res4_rmse_particles}
+\caption{RMSE and particle count for the second run of the second experiment}
+\end{figure}
+\begin{figure}[htp]
+\label{fig:ex2res5}
+\centering
+ \includegraphics[width=0.8\textwidth]{images/experiment2/res5_rmse_particles}
+\caption{RMSE and particle count for the third run of the second experiment}
+\end{figure}
+
 \section{Discussion}
 \subsection{Filtering}
 Bayes Filter (Algorithm \ref{alg:bayes}) provides a mathematical algorithm for calculating $bel(x_t)$; however, in general, it is not Turing-computable or is otherwise impractical \cite{probrob}. By assuming $x_t$ may be represented by a Gaussian distribution and that state transitions are linear, the Kalman Filter provides a practical implementation of the Bayes Filter. Furthermore, by representing the belief distribution as a set of state samples which can be individually updated, the Particle Filter provides an alternate practical implementation of Bayes. Both of these algorithms, in general, run in a much shorter amount of time.

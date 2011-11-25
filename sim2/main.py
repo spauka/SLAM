@@ -235,16 +235,7 @@ def p_rgb(p):
   r = p * 255 
   #print("r",r,"g",g,"b",b)
   return "#%.2X%.2X%.2X" % (r,g,b)
-def test_p_rgb():
-  P = [x/300.0 for x in list(range(0,300))]
-  plt.ion()
-  plt.show()
-  for p in P:
-    col = p_rgb(p)
-    plt.plot([p,p],[0,1],"-",color=col)
-    plt.draw()
-  plt.ioff()
-  plt.show()
+
 def test_measurement_prob():
   env = makeEnviron2()
   env.plot(plt)
@@ -288,6 +279,39 @@ def test_measurement_prob_2():
   plt.ioff()
   plt.show()
 
+def test_measurement_prob_3():
+  env=makeEnviron3()
+  path=makePath3()
+  mot=makeMotion1(5,6)
+  meas=Robot_Measurement_Model(measure_count=6,fov=pi/3,sd_hit=0.02)
+  start_pose = Pose(path[0][0],path[0][1],atan2(path[1][1]-path[0][1],path[1][0]-path[0][0]))
+
+  r = Robot_Sim(env,mot,Robot_Odometry_Model(),meas,start_pose)
+  r.tick((0,0),0.1)
+  plt.figure(0)
+  plt.clf()
+  env.plot(plt)
+  r.plot(plt,True)
+  plt.draw()
+  pp = PdfPages("measurement.pdf")
+  pp.savefig()
+  pp.close()
+
+def test_p_rgb():
+  P = [x/1000.0 for x in list(range(0,1000))]
+  pp = PdfPages("prgb.pdf")
+  plt.ion()
+  plt.show()
+  plt.figure(0)
+  for p in P:
+    col = p_rgb(p)
+    plt.plot([p,p],[0,1],"-",color=col)
+    plt.draw()
+  pp.savefig()
+  pp.close()
+  plt.ioff()
+  plt.show()
+  
 def test_KLD(epsilon,z_delta):
   k = list(range(2,10000))
   M = map(lambda k: ((k-1)/(2*epsilon)) * (1 - 2/(9*(k-1)) + sqrt(2/(9*(k-1)))*z_delta)**3, k)
@@ -298,7 +322,7 @@ def test_KLD(epsilon,z_delta):
   plt.show()
 
 
-def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Measurement_Model(measure_count=6,fov=pi/3,sd_hit=0.02),part_meas=Robot_Measurement_Model(measure_count=6,fov= pi/3,sd_hit=0.2),KLD=True,n=200,kidnapped=False,filename="out",epsilon=0.01,quant=1.65):
+def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Measurement_Model(measure_count=6,fov=pi/3,sd_hit=0.02),part_meas=Robot_Measurement_Model(measure_count=6,fov= pi/3,sd_hit=0.2),KLD=True,n=200,kidnapped=False,filename="out",epsilon=0.1,quant=1.65):
   if not os.path.exists(filename):
     os.makedirs(filename)
   f = open(filename + "/data.dat",'w')
