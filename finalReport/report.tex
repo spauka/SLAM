@@ -210,7 +210,7 @@ Following this algorithm, asymptotically $\underset{M \to \infty}{\lim} x^{[i]}_
 
 Generally speaking, while the particle set itself represents the posterior $p(x_t \mid z_{1:t}, u_{1:t})$, for many purposes such as planning, it is desirable to produce a state estimation in a more useful form. The simplest such method builds a discrete histogram over the state space, with the occupancy of each bin approximating the posterior density at its position. Alternatively, a Gaussian approximation could provide an effective maximum likelihood representation if the posterior is unimodal. In the case of multi-modal posteriors, k-means clustering may be used to provide a multi-modal approximation as a mixture of multiple Gaussians\cite{probrob}.
 \subsection{Localization}
-We will now leverage the kalman and particle filters to solve the localization problem. The first assumption in this problem is that a map or set of known features is available. This map could be created through other means, such as survey equipment, aerial photos, or another robot having mapped the environment through SLAM. Secondly, models must be available to produce the functions specified in algorithms \ref{alg:particle} and \ref{alg:kalman}. Which models are required and the form of the models is dependent on the problem; for example, the EKF requires that the Jacobian of the functions be readily available.
+We will now leverage the Kalman and particle filters to solve the localization problem. The first assumption in this problem is that a map or set of known features is available. This map could be created through other means, such as survey equipment, aerial photos, or another robot having mapped the environment through SLAM. Secondly, models must be available to produce the functions specified in algorithms \ref{alg:particle} and \ref{alg:kalman}. Which models are required and the form of the models is dependent on the problem; for example, the EKF requires that the Jacobian of the functions be readily available.
 
 In most localization problems, two distinct types of models are required: a model representing the kinematics of the robot and models representing the various sensor measurements. 
 
@@ -280,14 +280,14 @@ Therefore, there are two separate issues which must be addressed to solve the SL
 Here, we deal exclusively with the occupancy grid representation of a map as opposed to a feature based representation, which represents map positions in a grid, labelled either occupied or unoccupied (with corresponding uncertainties). 
 
 \subsubsection{Occupancy Grids}
-The ocuupancy grid representation of a map generally encodes a 2 dimensional slice of observations, using a fine grained grid to represent occupancy. Due to this fact, the dimensionality of the map increases with the size of the map squared (i.e. area), and thus the dimensionality of a map is generally very high, meaning it is infeasible to calculate the probability of each individual map out of the set of all possible maps. For example, given a side length of 100 cells, the total number of cells is $100^2$ and the total number of possible maps is $2^{100^2}$. However, we can calculate the probability of a map as the probability over each of its cells, each of which encode a binary state:
+The occupancy grid representation of a map generally encodes a 2 dimensional slice of observations, using a fine grained grid to represent occupancy. Due to this fact, the dimensionality of the map increases with the size of the map squared (i.e. area), and thus the dimensionality of a map is generally very high, meaning it is infeasible to calculate the probability of each individual map out of the set of all possible maps. For example, given a side length of 100 cells, the total number of cells is $100^2$ and the total number of possible maps is $2^{100^2}$. However, we can calculate the probability of a map as the probability over each of its cells, each of which encode a binary state:
 \begin{equation}
 p\left(m | z_{1:t}, x_{1:t}\right) = \prod_i p\left(\textbf{m}_i | z_{1:t}, x_{1:t}\right)
 \end{equation}
 
 Note that we assume that the pose $x_{1:t}$ is assumed to be certain. 
 
-By this representation, the probability is given as a binary estimation problem with static state. We note also that that the probability of cells being occupied or otherwise is often close to zero, Because of this it may be more approriate to use the log odds representation for the probability of occupancy:
+By this representation, the probability is given as a binary estimation problem with static state. We note also that that the probability of cells being occupied or otherwise is often close to zero, Because of this it may be more appropriate to use the log odds representation for the probability of occupancy:
 \begin{equation}
 l_{t,i} = \log{\frac{p(\textbf{m}_i | z_{1:t}, x_{1:t})}{1-p(\textbf{m}_i | z_{1:t}, x_{1:t})}}
 \end{equation}
@@ -315,21 +315,21 @@ The full algorithm for creating an occupancy grid is thus given by algorithm ~\r
 The function \textbf{inverse\_sensor\_model} is dependant on the sensor data and thus cannot be defined in general.
 
 \subsubsection{FastSLAM}
-The FastSLAM algorithm, and its later deriviatives such as DP-SLAM and DP-SLAM 2.0, are amongst the most successful algorithms in solving the SLAM problem, both in terms of accuracy and speed. The key feature of the SLAM problem that allows the use of particle filters, which scale exponentially with dimension, making their use unsuitable for highly dimensional data such as occupancy grids, is that there is conditional independance of between features on a map given the robot pose. In other words, if we know the exact position of the robot, then each of the scanned beams, in the case of a laser range finder, are independant of each other, as we would intuitively expect.
+The FastSLAM~\cite{fastslam} algorithm, and its later derivatives such as DP-SLAM~\cite{dpslam} and DP-SLAM 2.0~\cite{dpslam2}, are amongst the most successful algorithms in solving the SLAM problem, both in terms of accuracy and speed. The key feature of the SLAM problem that allows the use of particle filters, which scale exponentially with dimension, making their use unsuitable for highly dimensional data such as occupancy grids, is that there is conditional independence of between features on a map given the robot pose. In other words, if we know the exact position of the robot, then each of the scanned beams, in the case of a laser range finder, are independent of each other, as we would intuitively expect.
 
-As such, we can factor the map as for each of the particles, due to the fact that the individual map errors are conditionally independant of each other. This property means that we can overcome the problem of the high dimensionality of the representation therefore making the particle filter efficient enough for use in mapping.
+As such, we can factor the map as for each of the particles, due to the fact that the individual map errors are conditionally independent of each other. This property means that we can overcome the problem of the high dimensionality of the representation therefore making the particle filter efficient enough for use in mapping.
 
-The form of particle filters we apply to the problem are known as Rao-Blackwellized particle filters, based on the work of Rao(1945) and Blackwell(1947) in computing distributions over sets of variables by combining parametric density functions.
+The form of particle filters we apply to the problem are known as Rao-Blackwellized particle filters, based on the work of Rao(1945)~\cite{rao} and Blackwell(1947)~\cite{blackwell} in computing distributions over sets of variables by combining parametric density functions.
 
 The algorithm as described can be used in both feature based and occupancy grid based mapping algorithms. The following discussion focuses exclusively on the occupancy grid mapping approach.
 
 The core idea of the particle filter algorithm is that each particle describes a robot pose, and in the construction of the map, it is assumed that the robot pose is described by each particle with complete accuracy. This approach solves the earlier problem of the position depending on the map, and the map depending on the position as uncertainty in the position is represented by a diversity of particles, and hence is not factored into the generation of the map. Particles are then selected by the process of importance resampling as defined in the algorithm ~\ref{alg:particle}.
 
-The strength of the FastSLAM algorithm comes from the fact that data associations are stored per particle, and as such the algorithm stores a map per possible path making it much more robust to data association problems. This is in contrast to other common algorithms used for mapping, such as SLAM with EKF's, GraphSLAM or SEIF, where a map is only stored for the most likely track. In addition, since the particle filter does not rely on a linear motion and measurement model (or even a linearisable model), complicated non-linear models can bbe used with particle filters to build a map.
+The strength of the FastSLAM algorithm comes from the fact that data associations are stored per particle, and as such the algorithm stores a map per possible path making it much more robust to data association problems. This is in contrast to other common algorithms used for mapping, such as SLAM with EKF's, GraphSLAM or SEIF, where a map is only stored for the most likely track. In addition, since the particle filter does not rely on a linear motion and measurement model (or even a linearisable model), complicated non-linear models can be used with particle filters to build a map.
 
 It is interesting to note that the FastSLAM algorithm solves both the Online SLAM and Full SLAM problems as while the linearity assumption requires a certain path and therefore requires the full path posterior, by virtue of the fact that particle filters are implemented via an incremental algorithm, the solution it generates per unit time also solves the Online SLAM problem.
 
-As it turns out, the FastSLAM algorithm for occupancy grid maps is surprisingly simple given the algorithms we have previously defined. Assume each particle contains and estimate of the position $x_t$ and the associated map $m_t$. In addition, define a value $w_t$ associated with each particle which is the importance factor for each particle. As before, we deonte the set of all particles at time $t$ by $\chi_{t}$.
+As it turns out, the FastSLAM algorithm for occupancy grid maps is surprisingly simple given the algorithms we have previously defined. Assume each particle contains and estimate of the position $x_t$ and the associated map $m_t$. In addition, define a value $w_t$ associated with each particle which is the importance factor for each particle. As before, we denote the set of all particles at time $t$ by $\chi_{t}$.
 
 Looking at algorithm ~\ref{alg:particle}, we need to perform and update of the motion model, calculate an importance factor from the calculated map (algorithm ~\ref{alg:loc}) and finally update the occupancy grid (algorithm ~\ref{alg:occgrid}). After this the algorithm simply continues as per a standard particle filter.
 
@@ -369,24 +369,24 @@ The outputs of the system, namely the difference in position and the acceleratio
 In this section, three different forms of filter were evaluated on the same model. These were the Kalman filter, the Extended Kalman filter and the Particle filter. These algorithms are based off the descriptions given in section \ref{sec:filtering}.
 
 \begin{figure}[htp]
-\label{fig:simmo}
 \centering
  \includegraphics[width=0.75\textwidth]{images/simulatedmotion.png}
 \caption{Simulated Motion of Robot}
+\label{fig:simmo}
 \end{figure}
 
 \begin{figure}[htp]
-\label{fig:simac}
 \centering
  \includegraphics[width=0.75\textwidth]{images/simulatedaccelleration.png}
 \caption{Simulated Acceleration of Robot}
+\label{fig:simac}
 \end{figure}
 
 \begin{figure}[htp]
-\label{fig:siml}
 \centering
  \includegraphics[width=0.75\textwidth]{images/simulatedlaser.png}
 \caption{Simulated Noisy Laser Readings}
+\label{fig:siml}
 \end{figure}
 
 Unfortunately, the internal models by which the Kalman Filters and the Particle Filters are constructed precludes a direct comparison of the efficacy of the two algorithms in filtering data, as will be shown below. This means that any further discussion on the merits of one algorithm over the other will be purely based on the authors observations and previous research into the two classes of algorithm.
@@ -459,8 +459,8 @@ The definition of the particle differs from that of the Kalman filter in a numbe
 
 The state change probability was sampled around a distribution defined by:
 \begin{eqnarray}
-V_t &\sim& \mathcal{N}(v_{t-1} + u_{a,t-1}*\delta t, A_DEV) \\
-X_t &\sim& \mathcal{N}(x_{t-1} + v_t*\delta t, A_DEV)
+V_t &\sim& \mathcal{N}(v_{t-1} + u_{a,t-1}*\delta t, \mathrm{A\_DEV}) \\
+X_t &\sim& \mathcal{N}(x_{t-1} + v_t*\delta t, \mathrm{A\_DEV})
 \end{eqnarray}
 
 The weighting function then measures the probability given the following distribution:
@@ -475,6 +475,8 @@ Since we know the laser measurements are distributed normally around (eq. \ref{e
 \label{eq:las}
 p(z_t) \sim \mathcal{N}(x_t, \mathrm{L\_DEV})
 \end{equation}
+
+In the cases depicted below, a relatively low number of particles was used, namely 100 particles. This was done in order to mimic the actual number of particles which may be used in SLAM algorithms, given the significant computational cost both in terms of processor time and memory of running mapping algorithms.
 
 The metric used to determine the accuracy of the obtained results was the RMSE (root mean square error) (eq. ~\ref{eq:rmse}) algorithm, which quantitatively describes the error of each pose estimate, and hence allows comparison of states. In order to counteract the random noise introduced by producing the particle filter representation, the error for each time step was determined as the average RMSE errors over multiple iterations of the algorithm. In our case the values were averaged over 100 iterations of the algorithm.
 
@@ -494,24 +496,23 @@ The root mean squared errors of the calculation are given in table ~\ref{tbl:rka
 
 The results of running the EKF on the same set of data are given in figure ~\ref{fig:rekf}. Again, each point has an error bar corresponding to a standard deviation. In this case, there are only $8$ points lying outside the error bars, suggesting that the error is slightly overestimated.
 
-In addition to running the algorithm, figures ~\ref{fig:xxbar} and ~\ref{fig:yybar} give a comparison of taking cumulative values based on raw measurements (green line) and that of running the EKF (pink line, with blue error bars). The key features to note of this diagram is the accumulation of a large error margin on raw measurements and a substantial drift from the actual value along the green line.
+In addition to running the algorithm, figures~\ref{fig:xxbar} and~\ref{fig:yybar} give a comparison of taking cumulative values based on raw measurements (green line) and that of running the EKF (pink line, with blue error bars). The key features to note of this diagram is the accumulation of a large error margin on raw measurements and a substantial drift from the actual value along the green line.
 
 \begin{figure}[htp]
-\label{fig:rkalman}
 \centering
  \includegraphics[width=0.75\textwidth]{images/Kalman.png}
 \caption{Results of running Kalman Filter on simulated data}
+\label{fig:rkalman}
 \end{figure}
 
 \begin{figure}[htp]
-\label{fig:rekf}
 \centering
  \includegraphics[width=0.75\textwidth]{images/ExtendedKalman.png}
 \caption{Results of running an EKF on simulated data}
+\label{fig:rekf}
 \end{figure}
 
 \begin{table}[htp]
-\label{tbl:rkalman}
 \begin{center}
 \begin{tabular}{|l|l|l|}
 \hline
@@ -523,20 +524,21 @@ $y$ & 0.0161 & 0.0149 \\
 \end{tabular}
 \end{center}
 \caption{RMSE of the Kalman Filter Compared to that of the Extended Kalman Filter}
+\label{tbl:rkalman}
 \end{table}
 
 \begin{figure}[htp]
-\label{fig:xxbar}
 \centering
  \includegraphics[width=0.75\textwidth]{images/xxbar.png}
 \caption{Comparison of running an EKF and simply taking naive measurements on raw data on the X axis}
+\label{fig:xxbar}
 \end{figure}
 
 \begin{figure}[htp]
-\label{fig:yybar}
 \centering
  \includegraphics[width=0.75\textwidth]{images/yybar.png}
 \caption{Comparison of running an EKF and simply taking naive measurements on raw data on the Y axis}
+\label{fig:yybar}
 \end{figure}
 
 The results of performing global localization using a particle filter are also given below. The diagram showing the median location of particles per update is given in figure ~\ref{fig:particle}. The green circles represent the expected location, while the blue circles represents the actual location of the median of the particles.
@@ -544,17 +546,17 @@ The results of performing global localization using a particle filter are also g
 Given that information, the RMSE is also calculated for the system. Given that the algorithm has an inherent random factor, the algorithm was run multiple times and the average value of the RMSE was taken at each point in time. To generate the averages, the algorithm was run 1000 times, with the error being defined as the standard deviation over the iterations. This is shown in figure ~\ref{fig:rmseparticle}. 
 
 \begin{figure}[htp]
-\label{fig:particle}
 \centering
  \includegraphics[width=0.8\textwidth]{images/particlefilter.png}
 \caption{A sample of 6 runs of the particle filter, showing the random behavior over multiple runs}
+\label{fig:particle}
 \end{figure}
 
 \begin{figure}[htp]
-\label{fig:rmseparticle}
 \centering
  \includegraphics[width=0.8\textwidth]{images/particlefilterRMSE.png}
-\caption{RMSE of Particle Filter, showing decrease as localization occurs}
+\caption{RMSE of Particle Filter, showing decrease in RMS error as localization occurs}
+\label{fig:rmseparticle}
 \end{figure}
 
 % Results of Kidnapped Robot.
@@ -562,7 +564,7 @@ Given that information, the RMSE is also calculated for the system. Given that t
 
 \section{Experiment 2}
 \section{Discussion}
-
+\subsection{Filtering}
 Bayes Filter (Algorithm \ref{alg:bayes}) provides a mathematical algorithm for calculating $bel(x_t)$; however, in general, it is not Turing-computable or is otherwise impractical \cite{probrob}. By assuming $x_t$ may be represented by a Gaussian distribution and that state transitions are linear, the Kalman Filter provides a practical implementation of the Bayes Filter. Furthermore, by representing the belief distribution as a set of state samples which can be individually updated, the Particle Filter provides an alternate practical implementation of Bayes. Both of these algorithms, in general, run in a much shorter amount of time.
 
 In most applications the Kalman Filter is $O(k^{2.4} + n^2)$ where $n$ is the dimension of the state vector and $k$ the dimension of the measurement vector\cite{probrob}. As the filter consists almost entirely of matrix operations, which has been the subject of intense research, it can be implemented using a number of very efficient algorithms for matrix arithmetic. However, the $O(n^2)$ leads to significant scalability issues in high dimensional spaces making performance beyond a few thousand features poor in most modern implementations \cite{Thrun02d}.
@@ -576,9 +578,31 @@ The Particle Filter is equally applicable to multi-modal and unimodal distributi
 For multi-modal distributions, the Kalman Filter is inapplicable as presented; however it may be adapted to handle multiple hypotheses by representing the posterior as the normalised sum of individual Gaussians in a Multi-Hypothesis Kalman Filter (MHKF)\cite{probrob}.
 %Disadvantages of MHKFs?
 
-The Kalman Filter also cannot incorporate negative information (i.e. the lack of an expected observation) as this can neither be represented by a gaussian nor a linear combination of gaussians \cite{Thrun02d}. As Particle Filters can asymptotically represent an arbitrary distribution, they do not suffer from this drawback.
+The Kalman Filter also cannot incorporate negative information (i.e. the lack of an expected observation) as this can neither be represented by a Gaussian nor a linear combination of Gaussians \cite{Thrun02d}. As Particle Filters can asymptotically represent an arbitrary distribution, they do not suffer from this drawback.
 
 The Kalman Filter is dependent on the linearity of the measurement and movement models; in few practical applications does this assumption hold. Consequently, the basic Kalman Filter is of limited practical utility. This may be overcome by  modifying the algorithm to conditionally apply a different model based on the prior probability distribution (i.e. treat the models as piecewise-linear functions). Alternatively, the Extended Kalman Filter (EKF) allows the models to be arbitrary smooth functions and uses the first-order Taylor expansion to linearize the function for the state update. The EKF can be considered a generalisation of the first solution. Due to the linearisation of the functions, the EKF is highly sensitive to nonlinearities (i.e significant higher order terms). This degree of sensitivity is highly dependent on the uncertainty of the prior\cite{probrob}. Consequently, though the EKF is widely used in practice\cite{probrob}, it is ill-suited to applications with significant non-linearities in the measurement and movement models and large uncertainties.
+
+In the context of the simplistic situation in which the Kalman Filter and the Extended Kalman Filter were tested, it becomes clear that the linearity requirements places heavy restrictions on the applicability of the algorithm to even simplistic real world situations. Given a sensor model in which the direction of measurement is parallel to the axes of the coordinate system, the Kalman filter on its own was still not able to synthesise all the information, as while the measurements are linear given the environment, is is not possible to make a linear transformation without extra information.
+
+When considering whether this had a noticeable effect on the performance of the filter, it can be shown via table \ref{tbl:rkalman} that indeed the inability to incorporate all sensor readings does decrease its accuracy to less than that of the EKF (i.e. the RMS error is consistently higher in the Kalman Filter). The accuracy of measurements was measured by the RMS error of each iteration. However, it is important to note that since there is only one point per iteration, this measure is equivalent to the measure of euclidean distance.
+
+We note also that the number of measurements which fall into the range of one standard deviation is approximately $70\%$, which is approximately the expected value or around $64.2\%$. This suggests that the linear transformations being applied to the system, when given the correct uncertainty parameters are indeed maintaining a normal distribution around the actual position, which is the expected result. This result validates the implementation of the algorithm as we remember that the noise introduced to the sensor readings was Gaussian with given deviations.
+
+Considering also the Extended Kalman Filter, to which it was possible to introduce those measurements that had to be left out of the Kalman filter, we notice that the inclusion of all data points increases the accuracy of the filter marginally. Even given the simplicity of the situation represented, the inclusion of the additional information leads to an approximately $10\%$ decrease in the RMS error of the situation (see table~\ref{tbl:rkalman}. As discussed above however, the linearization of the transformation function necessarily imposes an additional error on the situation. In our situation, given the orthogonality of the measurements, this additional source of error appears to have been negligent, however further investigation needs to be done into the effect of linearization on the accuracy of results.
+
+In examining whether the filters were effective in improving the certainty of the measurements made, we can examine the difference between filtered output and unfiltered output in figures~\ref{fig:xxbar} and~\ref{fig:yybar}. Looking at the results of the unfiltered input, it is clear that without filtering the results diverge sufficiently from reality that they are virtually unusable. It is interesting to note that the cumulative effect of the errors in the unfiltered result on the y-axis (figure~\ref{fig:yybar}) extend beyond the bounds set by one standard deviation. Further examination of the simulation may be warranted to examine whether this is due to the random nature of the generated environment, or is due to some underlying error in the simulation. It must however be stressed that the result is not unexpected and is not so unlikely as to be remarkable.
+
+Looking at the fact that the errors become bounded and are asymptotic to a Gaussian distribution around the position of the particle, we can conclude that the Kalman filter is quite successful at filtering in this situation. However, it must be stressed that the situation tested was so contrived as to be unlikely to apply in most real world situations, hence the ability to construct transition functions with well defined parameters may play a much larger role in determining whether the filter is suitable for use in any given situation. In particular, we note that the simplicity of this situation led to very simple measurement and state transition functions, which will almost certainly not be the case in real world situations. Clearly for more complicated scenarios, a different approach must be found to dealing with state change and measurement functions, or alternate algorithms used.
+
+Considering now the results of applying a particle filter to the problem of Global Localization and Filtering, it can be noted empirically that the particle filter was highly successful in localizing from an uncertain state to one with a greater degree of certainty with quite some speed. It is immediately visible from figure~\ref{fig:rmseparticle} that as the number of iterations progress, on average there is a decrease in RMS error, asymptotically approaching some small value.
+
+This process can be observed through a number of sample runs which are depicted in figure~\ref{fig:particle}. Notice that despite having a uniform distribution, there is a variability in the location of the particles in the initial case. This may lead to differences in the time it takes to localise a particle, and hence the RMS error in the case of the first few iterations would be expected to vary depending on the initial distribution.
+
+In all cases, however, it is quite clear that the particle filter is quite effective at solving the global localization problem, partially due to the high flexibility in selecting a measurement and state change model, given that there is virtually no restriction on the form these functions may take.
+
+In addition, while direct comparison between the particle filter and the Kalman filter family of algorithms is difficult given the different approaches that were taken in implementing the algorithms, it is worth noting that at late iterations, while there was a high RMS error due to the diversity in particles, the actual distance between the median of the particles and the expected value is very low, therefore making it a direct competitor of the Kalman filter.
+
+In discussing the usefulness of this approach, it is worthwhile noting that the ease by which a particle filter is implemented plays a significant role in its widespread use in robotics. Even in this simple case, the fact that there was very little difficulty in implementing the algorithm, coupled with the low value
 
 % Discuss accuracy results for actual measurements.
 
