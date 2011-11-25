@@ -253,7 +253,10 @@ When a control command is sent, the motors and actuators attempt to carry it out
 \end{algorithmic}
 \end{algorithm}
 
-The primary form of measurement examined was a laser rangefinder. While lasers have a high degree of accuracy, there is nonetheless noise, both from the sensor itself and from spurious measurements. Furthermore, laser rangefinders have a maximum range, though in some cases this may safely be ignored. 
+The primary form of measurement examined was a laser rangefinder. While lasers have a high degree of accuracy, there is nonetheless noise, both from the sensor itself and from spurious measurements. Furthermore, laser rangefinders have a maximum range, though in some cases this may safely be ignored. A commonly used measurement model accounts for three classes of events: a valid hit, a spurious short measurement and a maximum range measurement.
+
+
+
 
 \subsection{The SLAM Problem}
 Having defined a number of algorithms for performing filtering and localization, we would now like to combine all the previous information into a statistical method for constructing a map. Given that we know that both position information and scan information is uncertain, we would like to some how construct a map which combines the uncertainties of all control and sensor measurements to create a statistically most likely map.
@@ -486,6 +489,41 @@ The metric used to determine the accuracy of the obtained results was the RMSE (
 
 \section{Results}
 % Diagram of Kalman, EKF. Diagram RMSE.
+The results of running the Kalman filter on the situation set out above are shown in figure ~\ref{fig:rkalman}. Each point has error bars corresponding to a standard deviation, as calculated by the filter.
+
+The root mean squared errors of the calculation are given in table ~\ref{tbl:rkalman}. There are 11 points which lie outside of the error bars, which suggests that there may be some systematic error which is $75\%$ of the data points. This is close to the expected value as approximately $64\%$ of points are expected to lie within two standard deviations of the mean.
+
+The results of running the EKF on the same set of data are given in figure ~\ref{fig:rekf}. Again, each point has an error bar corresponding to a standard deviation. In this case, there are only $8$ points lying outside the error bars, suggesting that the error is slightly overestimated.
+
+\begin{figure}[htp]
+\label{fig:rkalman}
+\centering
+ \includegraphics[width=0.75\textwidth]{images/Kalman.png}
+\caption{Results of running Kalman Filter on simulated data}
+\end{figure}
+
+\begin{figure}[htp]
+\label{fig:rekf}
+\centering
+ \includegraphics[width=0.75\textwidth]{images/ExtendedKalman.png}
+\caption{Results of running an EKF on simulated data}
+\end{figure}
+
+\begin{table}[htp]
+\label{tbl:rkalman}
+\begin{center}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Parameter} & \textbf{Kalman Filter RMSE} & \textbf{EKF RMSE} \\
+\hline
+$x$ & 0.0115 & 0.0105 \\
+$y$ & 0.0161 & 0.0149 \\
+\hline
+\end{tabular}
+\end{center}
+\caption{RMSE of the Kalman Filter Compared to that of the Extended Kalman Filter}
+\end{table}
+
 % Diagram of Particle Filter. Diagram RMSE.
 % Results of Kidnapped Robot.
 % Results of FastSLAM

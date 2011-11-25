@@ -6,6 +6,7 @@ from robot import *
 from mcl import *
 #Plotting requires matplotlib.
 import matplotlib
+import matplotlib.backends.backend_pdf
 import sys
 matplotlib.use('GTKAgg') #Feel free to change the backend
 #['ps', 'Qt4Agg', 'GTK', 'GTKAgg', 'svg', 'agg', 'cairo', 'MacOSX', 'GTKCairo', 'WXAgg', 'TkAgg', 'QtAgg', 'FltkAgg', 'pdf', 'CocoaAgg', 'emf', 'gdk', 'template', 'WX']
@@ -295,7 +296,7 @@ def test_KLD(epsilon,z_delta):
   plt.show()
 
 
-def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Measurement_Model(measure_count=5,fov=pi/2,sd_hit=0.02),part_meas=Robot_Measurement_Model(measure_count=5,fov=pi/2,sd_hit=0.2),KLD=True,n=200,kidnapped=False,filename="out.dat",delta=0.15,quant=1.7):
+def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Measurement_Model(measure_count=12,fov=2 * pi,sd_hit=0.02),part_meas=Robot_Measurement_Model(measure_count=12,fov= 2* pi,sd_hit=0.2),KLD=True,n=200,kidnapped=False,filename="out.dat",delta=0.10,quant=1.6):
   f = open(filename,'w')
   start_pose = Pose(path[0][0],path[0][1],atan2(path[1][1]-path[0][1],path[1][0]-path[0][0]))
 
@@ -303,7 +304,7 @@ def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Meas
   r.tick((0,0),0.1)
   P0 = Particle_Collection([],env,mot,part_meas)
   if kidnapped:
-    P0.draw_n_random(100000)
+    P0.draw_n_random(10000)
     P0.w_fast = 0.001
     P0.w_slow = 0.001
   else:
@@ -329,6 +330,7 @@ def MCL(env=makeEnviron3(),path=makePath3(),mot=makeMotion1(5,6),meas=Robot_Meas
       P_resampled = P_new.resample(Z)
     #P.append(P_resampled)
     P_prev = P_new
+    print "rmse:", P_new.rmse(r.x)
     i = i+1
     
     plt.figure(0)

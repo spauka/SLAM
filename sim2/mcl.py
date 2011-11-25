@@ -37,6 +37,12 @@ def part_from_str(s):
 class Particle_Collection:
   def __init__(self,P,env,mot,meas,w_slow=1,w_fast=1,a_slow=0.89,a_fast=0.90,r_weight=1):
     self.__dict__.update(locals())
+  def rmse(self, X):
+    s = 0
+    for p in self.P:
+      s = s + p.x.err(X)
+    return sqrt(s / len(self.P))
+	  
   def add(self, p):
     P.append(p)
   def sample_mov(self,u,dt):
@@ -141,7 +147,43 @@ class Particle_Collection:
   def draw_n_random(self, n):
     for i in range(n):
       self.P.append(self.draw_random())
+  def plot1(self,plt,f):
+    out = []
+    if not self.H is None:
+      #H_sorted = []
+      #n = 0
+      w_thr = self.w_max/50
+      for i in self.H.H:
+        for j in self.H.H[i]:
+          for k in self.H.H[i][j]:
+            h = self.H.H[i][j][k] 
+            if h.w() > w_thr:
+              h.plot(plt,f)
+              out.append((h.X,h.w_val))
+           #w = h.w()
+           #if (n < 1000):
+           #  n = n+1
+           #  heappush(H_sorted,(w,h))
+           #elif (w > H_sorted[0][0]):
+           #  n = n+1
+           #  heappush(H_sorted,(w,h))
+           #  heappop(H_sorted)
+     #for (w,h) in H_sorted:
+     #  h.plot(plt,f)
+     #  out.append((h.X,h.w_val))
+    else:
+      i = 0
+      for p in self.P:
+        if i > 500:
+          return      
+        if p.w > 0.00001:
+          p.plot(plt,f)
+          out.append((p.X,p.w))
+          i = i + 1
+    return out
+
   def plot(self,plt,f):
+    
     out = []
     if not self.H is None:
       #H_sorted = []
@@ -197,6 +239,7 @@ class BinSet:
     self.dy = self.height/float(self.ny)
     self.dth = (2*pi)/float(self.nt)
     self.H = {}
+    self.count = 0
   def isempty(self,p):
     i = min([int((p.x.x-self.x)/self.dx),self.nx-1])
     j = min([int((p.x.y-self.y)/self.dy),self.ny-1])
