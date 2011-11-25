@@ -758,13 +758,12 @@ Two other runs of the simulation are shown in figures \ref{fig:ex2res4} and \ref
 \label{fig:ex2res5}
 \end{figure}
 \pagebreak
-\section{Discussion}
-\subsection{Filtering}
+\section{Conclusions}
 Bayes Filter (Algorithm \ref{alg:bayes}) provides a mathematical algorithm for calculating $bel(x_t)$; however, in general, it is not Turing-computable or is otherwise impractical \cite{probrob}. By assuming $x_t$ may be represented by a Gaussian distribution and that state transitions are linear, the Kalman Filter provides a practical implementation of the Bayes Filter. Furthermore, by representing the belief distribution as a set of state samples which can be individually updated, the Particle Filter provides an alternate practical implementation of Bayes. Both of these algorithms, in general, run in a much shorter amount of time.
 
 In most applications the Kalman Filter is $O(k^{2.4} + n^2)$ where $n$ is the dimension of the state vector and $k$ the dimension of the measurement vector\cite{probrob}. As the filter consists almost entirely of matrix operations, which has been the subject of intense research, it can be implemented using a number of very efficient algorithms for matrix arithmetic. However, the $O(n^2)$ leads to significant scalability issues in high dimensional spaces making performance beyond a few thousand features poor in most modern implementations \cite{Thrun02d}.
 
-The time complexity of certain particle filter implementations can achieve $O(M \log n)$\cite{Thrun02d}. Consequently, particle filters scale far better to high dimensional problems. As the filter only asymptotically produces the correct distribution, too few particles may produce inaccurate or misleading reasults. Nonetheless, as performance is linear in $M$, the algorithm can be efficiently scaled to the desired degree of accuracy.
+The time complexity of certain particle filter implementations can achieve $O(M \log n)$\cite{Thrun02d}. Consequently, particle filters can scale well to high dimensional problems. As the filter only asymptotically produces the correct distribution, too few particles may produce inaccurate or misleading reasults. Nonetheless, as performance is linear in $M$, the algorithm can be efficiently scaled to the desired degree of accuracy.
 
 The assumption by the Kalman Filter that the posterior can be represented by a Gaussian only produces meaningful results for unimodal distributions. However, multi-modal distributions commonly occur in applications such as SLAM as there may exist multiple hypotheses. In these cases, the Kalman filter will produce a belief which is a linear combination of the modes of the distribution. Consequently, a belief may be produced that is impossible or otherwise meaningless within the parameters of the problem. This limits its use in those cases where multiple beliefs are equally likely, or when there is not yet enough information to determine one particular state.
 
@@ -793,19 +792,13 @@ Considering now the results of applying a particle filter to the problem of Glob
 
 This process can be observed through a number of sample runs which are depicted in figure~\ref{fig:particle}. Notice that despite having a uniform distribution, there is a variability in the location of the particles in the initial case. This may lead to differences in the time it takes to localise a particle, and hence the RMS error in the case of the first few iterations would be expected to vary depending on the initial distribution.
 
-In all cases, however, it is quite clear that the particle filter is quite effective at solving the global localization problem, partially due to the high flexibility in selecting a measurement and state change model, given that there is virtually no restriction on the form these functions may take.
+When the problem is extended to more general localization problems, such as the Kidnapped Robot Problem, it is apparent from figures \ref{fig:ex2res3}, \ref{fig:ex2res4} and \ref{fig:ex2res5} that the problem is readily soluble using a monte-carlo filter with several modifications to improve its robustness. This problem could not have even been attempted in any reasonable manner by a Kalman Filter.
+
+In all cases it is quite clear that the particle filter is quite effective at solving the global localization problem, partially due to the high flexibility in selecting a measurement and state change model, given that there is virtually no restriction on the form these functions may take.
 
 In addition, while direct comparison between the particle filter and the Kalman filter family of algorithms is difficult given the different approaches that were taken in implementing the algorithms, it is worth noting that at late iterations, while there was a high RMS error due to the diversity in particles, the actual distance between the median of the particles and the expected value is very low, therefore making it a direct competitor of the Kalman filter.
 
 In discussing the usefulness of this approach, it is worthwhile noting that the ease by which a particle filter is implemented plays a significant role in its widespread use in robotics. Even in this simple case, the fact that there was very little difficulty in implementing the algorithm, coupled with the low value
-
-% Discuss accuracy results for actual measurements.
-
-% Discuss results of Kidnapped Robot Problem
-
-% Discuss results of FastSLAM
-
-\section{Conclusion}
 
 \bibliographystyle{plain}
 \bibliography{references}
