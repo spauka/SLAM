@@ -259,6 +259,11 @@ The primary form of measurement examined was a laser rangefinder. While lasers h
 
 The most general localization problems, such as the kidnapped robot problem, require a degree of robustness not found in the basic particle filter presented previously. The first issue is that if there are no particles in the vicinty of the actual state, in most cases the correct state will not be found and the particles will instead gravitate towards alternate hypotheses. A solution is to incorporate random generation of particles dependent on the average measurement weight.
 
+Experimentally, it was found that $\alpha_{\mathrm{slow}}$ need only by slightly less than $\alpha_{\mathrm{fast}}$ as the particle weights decrase extremely quickly when no feasible hypothesis is being represented.
+
+The second modification is the incorporation of KLD---sampling, which adjusts the number of particles drawn based on their spread; the less tightly clustered, the greater the number of particles required to accurately represent the posterior. The degree of clustering is determined by filling a histogram, $H$ with the particles as they are sampled and counting the number of bins with more than one occupying particle.
+
+
 \begin{algorithm}
 \caption{The Augmented Particle Filter}
 \label{alg:augmented_particle}
@@ -287,9 +292,6 @@ The most general localization problems, such as the kidnapped robot problem, req
 
 \end{algorithmic}
 \end{algorithm}
-
-
-
 
 \subsection{The SLAM Problem}
 Having defined a number of algorithms for performing filtering and localization, we would now like to combine all the previous information into a statistical method for constructing a map. Given that we know that both position information and scan information is uncertain, we would like to some how construct a map which combines the uncertainties of all control and sensor measurements to create a statistically most likely map.
