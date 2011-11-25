@@ -208,7 +208,52 @@ It can be shown through induction on Bayes' Rule that $bel(x_{0:t})$ can be give
 \end{align}
 Following this algorithm, asymptotically $\underset{M \to \infty}{\lim} x^{[i]}_t \sim p(x_t \mid z_{1:t}, u_{1:t})$.
 
+Generally speaking, while the particle set itself represents the posterior $p(x_t \mid z_{1:t}, u_{1:t})$, for many purposes such as planning, it is desirable to produce a state estimation in a more useful form. The simplest such method builds a discrete histogram over the state space, with the occupancy of each bin approximating the posterior density at its position. Alternatively, a Gaussian approximation could provide an effective maximum likelihood representation if the posterior is unimodal. In the case of multimodal posteriors, k-means clustering may be used to provide a multimodal approximation as a mixture of multiple Gaussians\cite{probrob}.
 \subsection{Localization}
+We will now leverage the kalman and particle filters to solve the localization problem. The first assumption in this problem is that a map or set of known features is available. This map could be created through other means, such as survey equipment, aerial photos, or another robot having mapped the environment through SLAM. Secondly, models must be available to produce the functions specified in algorithms \ref{alg:particle} and \ref{alg:kalman}. Which models are required and the form of the models is dependent on the problem; for example, the EKF requires that the Jacobian of the functions be readily available.
+
+In most localization problems, two distinct types of models are required: a model representing the kinematics of the robot and models representing the various sensor measurements. 
+
+For simplicity, only the kinematic problem of a robot in the plane was examined. In this case, the pose of the robot is represented by the vector $x_t = (x,y,\theta)^T$. There are two distinct motion models that can now be used, the velocity and odometry models.
+The velocity model assumes that a control instruction $u_t = (v_t, \omega_t)^T$ consists of a forward velocity $v_t$ and a rotational velocity $\omega_t$. The path of the robot within a single timestep can then be described by an arc of a circle with uncertainty in the  velocity, angular veloctity and final orientation \cite{probrob}. Note that the function $\textrm{sample}(\sigma)$ samples from a zero---centered distribution with standard deviation $\sigma$. Also, this model has coefficients $\alpha_{1\rightarrow 6}$ relating the uncertainty to both the angular and forwards velocity; in practice, turning can be a significant source of noise due to effects such as slipping of the wheels.
+
+\begin{algorithm}
+\caption{Velocity Motion Model}
+\label{alg:velocity_model}
+\begin{algorithmic}
+	\REQUIRE $u_t = (v, \omega)^T, x_{t-1} = (x, y, \theta)^T $
+        \STATE $\hat{v} = v + \textrm{sample}(\alpha_1|v| + \alpha_2|\omega|)$
+        \STATE $\hat{v} = v + \textrm{sample}(\alpha_3|v| + \alpha_4|\omega|)$
+        \STATE $\hat{\gamma} = \textrm{sample}(\alpha_5|v| + \alpha_6|\omega|)$
+        \STATE $x' = x - \frac{\hat{v}}{\hat{\omega}}\sin{\theta} + \frac{\hat{v}}{\hat{\omega}}\sin{(\theta + \hat{\omega} \Delta t)}$
+        \STATE $y' = y + \frac{\hat{v}}{\hat{\omega}}\cos{\theta} - \frac{\hat{v}}{\hat{\omega}}\cos{(\theta + \hat{\omega} \Delta t)}$
+        \STATE $\theta' = \theta + \hat{\omega}\Delta t + \hat{\gamma}\Delta t$
+        \RETURN $x_t = (x', y', \theta')^T$
+\end{algorithmic}
+\end{algorithm}
+
+
+When a control command is sent, the motors and actuators attempt to carry it out, producing some change in the robot's pose which is then approximated by the odometry. The velocity motion model probabilistically relates the control to the change in pose, the odometry model estimates the pose from the odometry data. In practice, odometry has the significant advantage of measuring a robot's change in pose after the fact; for example, if a robot collided with an obstacle, the velocity model may optimistically assume the robot travelled through, whereas the odometry may show the robot being halted.
+
+\begin{algorithm}
+\caption{Odometry Motion Model}
+\label{alg:odometry_model}
+\begin{algorithmic}
+	\REQUIRE $u_t = (\bar{x}_{t-1},\bar{x}_t)^T, x_{t-1} = (x, y, \theta)^T$
+        \STATE $\delta_{\mathrm{rot1}} = \mathrm{atan2}(\bar{y}' - \bar{y}, \bar{x}' - \bar{x}) - \bar{\theta}$
+        \STATE $\delta_{\mathrm{trans}} = \sqrt{(\bar{y}' - \bar{y})^2 + (\bar{x}' - \bar{x})^2}$
+        \STATE $\delta_{\mathrm{rot2}} = \bar{\theta}' - \bar{\theta} - \delta_{\mathrm{rot1}}$
+        \STATE $\hat{\delta}_{\mathrm{rot1}} = \delta_{\mathrm{rot1}} - \textrm{sample}(\alpha_1|\delta_{\mathrm{rot1}}| + \alpha_2\delta_{\mathrm{trans}})$
+        \STATE $\hat{\delta}_{\mathrm{trans}} = \delta_{\mathrm{trans}} - \textrm{sample}(\alpha_4(|\delta_{\mathrm{rot1}}| + |\delta_{\mathrm{rot2}}|)+ \alpha_3\delta_{\mathrm{trans}})$
+        \STATE $\hat{\delta}_{\mathrm{rot2}} = \delta_{\mathrm{rot2}} - \textrm{sample}(\alpha_1|\delta_{\mathrm{rot2}}| + \alpha_2\delta_{\mathrm{trans}})$
+        \STATE $x' = x + \hat{\delta}_{\mathrm{trans}}\cos{(\theta + \hat{\delta}_{\mathrm{rot1}})} $
+        \STATE $y' = y + \hat{\delta}_{\mathrm{trans}}\sin{(\theta + \hat{\delta}_{\mathrm{rot1}})} $
+        \STATE $\theta' = \theta + \hat{\delta}_{\mathrm{rot1}} + \hat{\delta}_{\mathrm{rot2}}$
+        \RETURN $x_t = (x', y', \theta')^T$
+\end{algorithmic}
+\end{algorithm}
+
+The primary form of measurement examined was a laser rangefinder. While lasers have a high degree of accuracy, there is nonetheless noise, both from the sensor itself and from spurious measurements. Furthermore, laser rangefinders have a maximum range, though in some cases this may safely be ignored. 
 
 \subsection{The SLAM Problem}
 Having defined a number of algorithms for performing filtering and localization, we would now like to combine all the previous information into a statistical method for constructing a map. Given that we know that both position information and scan information is uncertain, we would like to some how construct a map which combines the uncertainties of all control and sensor measurements to create a statistically most likely map.
